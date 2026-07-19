@@ -90,6 +90,9 @@ export class AccountingRepository {
       if (existing.length === 0) {
         throw new Error("NOT_FOUND");
       }
+      if (existing[0].status === "Posted") {
+        throw new Error("CANNOT_MODIFY_POSTED_JOURNAL");
+      }
       if (existing[0].version !== currentVersion) {
         throw new Error("CONCURRENT_WRITE_CONFLICT");
       }

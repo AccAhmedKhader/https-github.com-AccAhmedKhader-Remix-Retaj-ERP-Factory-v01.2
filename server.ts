@@ -10,7 +10,7 @@ import rateLimit from "express-rate-limit";
 import bcrypt from "bcryptjs";
 import { getDb, getDbForTenant } from "./src/core/database/db";
 import { users, auditLogs } from "./src/core/database/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import accountingRouter from "./src/core/routes/accounting";
 import inventoryRouter from "./src/core/routes/inventory";
 import hrRouter from "./src/core/routes/hr";
@@ -32,6 +32,16 @@ import { validateEnv } from "./src/core/config/env-validation";
 
 // Validate required high-entropy secrets at startup
 validateEnv();
+
+if (process.env.NODE_ENV === "production") {
+  const dbUrl = process.env.DATABASE_URL;
+  if (!dbUrl || dbUrl.trim() === "" || dbUrl === "undefined") {
+    console.error("=================================================================");
+    console.error("❌ CRITICAL CONFIGURATION ERROR: DATABASE_URL IS REQUIRED IN PRODUCTION!");
+    console.error("=================================================================");
+    process.exit(1);
+  }
+}
 
 const app = express();
 const PORT = 3000;
@@ -278,12 +288,45 @@ app.get("/api/auth/me", (req, res) => {
 });
 
 // Liveness & Readiness Healthcheck Endpoint
-app.get("/health", (req, res) => {
-  res.json({
-    status: "healthy",
+app.get("/health", async (req: Request, res: Response) => {
+  let dbHealthy = false;
+  let storageHealthy = false;
+  let dbError = "";
+  let storageError = "";
+
+  try {
+    const db = await getDb();
+    await db.execute(sql`SELECT 1`);
+    dbHealthy = true;
+  } catch (err: any) {
+    dbError = err.message || String(err);
+  }
+
+  try {
+    const provider = StorageService.getProvider();
+    storageHealthy = await provider.healthCheck();
+  } catch (err: any) {
+    storageError = err.message || String(err);
+  }
+
+  const overallHealthy = dbHealthy && storageHealthy;
+  const statusCode = overallHealthy ? 200 : 503;
+
+  res.status(statusCode).json({
+    status: overallHealthy ? "healthy" : "unhealthy",
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    memory: process.memoryUsage().heapUsed
+    memory: process.memoryUsage().heapUsed,
+    checks: {
+      database: {
+        status: dbHealthy ? "UP" : "DOWN",
+        ...(dbError ? { error: dbError } : {})
+      },
+      storage: {
+        status: storageHealthy ? "UP" : "DOWN",
+        ...(storageError ? { error: storageError } : {})
+      }
+    }
   });
 });
 
@@ -621,6 +664,12 @@ app.post("/api/v1/accounting/close-period", requireScope("accounting:post"), (re
   try {
     const tenantId = (req as any).user?.tenantId || (req.query.tenantId as string) || (req.headers["x-tenant-id"] as string) || "TEN-APEX-01";
     const result = EnterpriseDBEngine.executeTransaction((db) => {
+      // 0. Verify there are no Draft journal entries
+      const draftEntries = db.journalEntries.filter(e => e.status === "Draft" || e.status?.toLowerCase() === "draft");
+      if (draftEntries.length > 0) {
+        throw new Error(`لا يمكن إقفال الفترة المالية لوجود عدد (${draftEntries.length}) من القيود بحالة مسودة (Draft). يرجى ترحيلها أو حذفها أولاً لضمان سلامة التقرير المالي.`);
+      }
+
       // 1. Gather all temporary Revenue and Expense Accounts
       const revenues = db.accounts.filter(a => a.type === "Revenue" && a.balance !== 0);
       const expenses = db.accounts.filter(a => a.type === "Expense" && a.balance !== 0);
@@ -746,12 +795,20 @@ app.post("/api/v1/accounting/fixed-assets/depreciate", requireScope("accounting:
           // Calculate monthly share
           const monthlyDepr = Math.round(annualDepr / 12);
 
-          if (asset.bookValue - monthlyDepr >= asset.salvageValue) {
-            asset.accumulatedDepreciation += monthlyDepr;
-            asset.bookValue -= monthlyDepr;
-            totalDepreciationPosted += monthlyDepr;
+          const remainingDepreciable = asset.bookValue - asset.salvageValue;
+          let monthlyDeprFinal = monthlyDepr;
 
-            depreciationLogs.push(`تم احتساب قسط إهلاك شهري للأصل [${asset.name}] بمبلغ ${monthlyDepr.toLocaleString()} ج.م.`);
+          if (remainingDepreciable <= monthlyDepr * 1.5) {
+            // This is the last depreciation step. Adjust to exactly the remaining depreciable value to prevent rounding differences.
+            monthlyDeprFinal = remainingDepreciable;
+          }
+
+          if (monthlyDeprFinal > 0) {
+            asset.accumulatedDepreciation += monthlyDeprFinal;
+            asset.bookValue -= monthlyDeprFinal;
+            totalDepreciationPosted += monthlyDeprFinal;
+
+            depreciationLogs.push(`تم احتساب قسط إهلاك شهري للأصل [${asset.name}] بمبلغ ${monthlyDeprFinal.toLocaleString()} ج.م.`);
 
             if (asset.bookValue <= asset.salvageValue) {
               asset.status = "Fully Depreciated";

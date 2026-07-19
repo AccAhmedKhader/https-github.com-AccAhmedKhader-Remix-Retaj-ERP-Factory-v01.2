@@ -21,6 +21,7 @@ export default defineConfig({
       "node_modules/**",
       "dist/**",
       "src/core/database/tests/**",
+      "tests/**",
     ],
     coverage: {
       provider: "v8",

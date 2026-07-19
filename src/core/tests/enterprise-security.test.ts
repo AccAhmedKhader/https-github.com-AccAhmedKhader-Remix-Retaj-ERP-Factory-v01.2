@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeAll, vi } from "vitest";
+import dotenv from "dotenv";
 import { AclEngine } from "../security/acl-engine";
 import { AntivirusService } from "../security/antivirus-service";
 import { CryptographyService } from "../security/cryptography-service";
@@ -370,6 +371,7 @@ describe("Enterprise Security Platform Integration & Unit Tests", () => {
     });
 
     it("should fail validation and throw error if a required secret is missing", async () => {
+      const dotenvSpy = vi.spyOn(dotenv, "config").mockImplementation(() => { return {} as any; });
       const originalJwtSecret = process.env.JWT_SECRET;
       delete process.env.JWT_SECRET;
       
@@ -378,6 +380,7 @@ describe("Enterprise Security Platform Integration & Unit Tests", () => {
         expect(() => validateEnv()).toThrow();
       } finally {
         process.env.JWT_SECRET = originalJwtSecret;
+        dotenvSpy.mockRestore();
       }
     });
 

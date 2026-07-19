@@ -1,0 +1,29 @@
+groups:
+  - name: erp-alerts
+    rules:
+      - alert: HighAuthFailureRate
+        expr: rate(auth_failures_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Abnormal Authentication Failure Rate Detected"
+          description: "Login failures rate exceeds 10% in the last 5 minutes. Potential brute-force attack."
+
+      - alert: HighApiLatency
+        expr: http_request_duration_seconds{quantile="0.95"} > 1.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Abnormal API Latency Detected"
+          description: "The 95th percentile of API response latency exceeds 1.5s for more than 5 minutes."
+
+      - alert: StorageHealthCheckFailure
+        expr: storage_health_status == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Enterprise Storage Provider Unhealthy"
+          description: "The persistent S3 or Azure Blob storage mount health-check or backup write probe is currently failing."

@@ -38,8 +38,20 @@ import CRMModule from "./components/CRMModule";
 import DocManagerModule from "./components/DocManagerModule";
 import WorkflowModule from "./components/WorkflowModule";
 
-// Global fetch wrapper to automatically inject JWT access tokens and handle 401 logouts
+// Global fetch wrapper to automatically inject JWT access tokens and handle 401 logouts with auto-refresh
 const originalFetch = window.fetch.bind(window);
+let isRefreshing = false;
+let refreshSubscribers: ((token: string) => void)[] = [];
+
+function onRefreshed(token: string) {
+  refreshSubscribers.forEach((cb) => cb(token));
+  refreshSubscribers = [];
+}
+
+function addRefreshSubscriber(cb: (token: string) => void) {
+  refreshSubscribers.push(cb);
+}
+
 Object.defineProperty(window, "fetch", {
   value: async function (input: RequestInfo | URL, init?: RequestInit) {
     const token = localStorage.getItem("apex_access_token");
@@ -57,13 +69,68 @@ Object.defineProperty(window, "fetch", {
       }
     }
     
-    const response = await originalFetch(input, init);
+    let response = await originalFetch(input, init);
+    const urlStr = typeof input === "string" ? input : ("url" in input ? (input as any).url : String(input));
     
-    if (response.status === 401 && !String(input).includes("/api/auth/login")) {
-      localStorage.removeItem("apex_access_token");
-      localStorage.removeItem("apex_refresh_token");
-      localStorage.removeItem("apex_user");
-      window.dispatchEvent(new Event("apex_unauthorized"));
+    if (response.status === 401 && !urlStr.includes("/api/auth/login") && !urlStr.includes("/api/auth/refresh")) {
+      const refreshToken = localStorage.getItem("apex_refresh_token");
+      if (refreshToken) {
+        if (!isRefreshing) {
+          isRefreshing = true;
+          try {
+            const refreshRes = await originalFetch("/api/auth/refresh", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ refreshToken })
+            });
+            if (refreshRes.ok) {
+              const refreshData = await refreshRes.json();
+              if (refreshData.success && refreshData.data?.accessToken) {
+                const newToken = refreshData.data.accessToken;
+                localStorage.setItem("apex_access_token", newToken);
+                isRefreshing = false;
+                onRefreshed(newToken);
+              } else {
+                throw new Error("Invalid refresh response");
+              }
+            } else {
+              throw new Error("Refresh failed");
+            }
+          } catch (e) {
+            isRefreshing = false;
+            localStorage.removeItem("apex_access_token");
+            localStorage.removeItem("apex_refresh_token");
+            localStorage.removeItem("apex_user");
+            window.dispatchEvent(new Event("apex_unauthorized"));
+            return response;
+          }
+        }
+        
+        // Wait for the token refresh to finish, then retry the request
+        const retryWithNewToken = new Promise<Response>((resolve) => {
+          addRefreshSubscriber((newToken) => {
+            init = init || {};
+            init.headers = init.headers || {};
+            if (init.headers instanceof Headers) {
+              init.headers.set("Authorization", `Bearer ${newToken}`);
+            } else if (Array.isArray(init.headers)) {
+              const authIdx = init.headers.findIndex(h => h[0].toLowerCase() === "authorization");
+              if (authIdx !== -1) init.headers[authIdx][1] = `Bearer ${newToken}`;
+              else init.headers.push(["Authorization", `Bearer ${newToken}`]);
+            } else {
+              (init.headers as any)["Authorization"] = `Bearer ${newToken}`;
+            }
+            resolve(originalFetch(input, init));
+          });
+        });
+        
+        return retryWithNewToken;
+      } else {
+        localStorage.removeItem("apex_access_token");
+        localStorage.removeItem("apex_refresh_token");
+        localStorage.removeItem("apex_user");
+        window.dispatchEvent(new Event("apex_unauthorized"));
+      }
     }
     
     return response;
@@ -472,6 +539,11 @@ export default function App() {
         setIsLoadingDB(false);
       })
       .catch((err) => {
+        if (err.message === "Session expired or unauthorized") {
+          console.warn("Session expired or unauthorized. Redirecting to login.");
+          setIsLoadingDB(false);
+          return;
+        }
         console.error("Server DB loading failed:", err);
         if (retryCount < 3) {
           console.log(`Retrying state fetch... Attempt ${retryCount + 1}`);

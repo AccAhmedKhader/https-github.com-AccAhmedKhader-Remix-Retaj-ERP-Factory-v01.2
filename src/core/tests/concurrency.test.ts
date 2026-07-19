@@ -47,7 +47,7 @@ describe("Optimistic Locking & Concurrency Conflict Tests", () => {
       date: "2026-07-14",
       description: "Original Description",
       reference: "REF-01",
-      status: "Posted",
+      status: "Draft",
       costCenter: "CC-01",
       profitCenter: "PC-01",
       creator: "SYSTEM",
@@ -131,14 +131,14 @@ describe("Optimistic Locking & Concurrency Conflict Tests", () => {
     const entryA = {
       id: entryId,
       description: "Updated by Client A",
-      status: "Posted",
+      status: "Draft",
       version: 1,
     };
 
     const entryB = {
       id: entryId,
       description: "Updated by Client B",
-      status: "Posted",
+      status: "Draft",
       version: 1,
     };
 

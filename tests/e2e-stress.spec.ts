@@ -75,18 +75,23 @@ test.describe("ApexSaaS ERP Production Go-Live Tests", () => {
   });
 
   test("Stress Test: Concurrency Isolation & Lock Prevention under high request density", async ({ page }) => {
-    console.log("[Stress Test] Spawning 20 concurrent transactions to evaluate race conditions...");
+    console.log("[Stress Test] Spawning 20 concurrent transactions across distinct tenants to evaluate race conditions & RLS...");
 
-    // Fire 20 parallel transactions to evaluate Row-Level Security and DB locks
+    // Fire 20 parallel transactions (staggered across Tenant A and Tenant B) to evaluate Row-Level Security and DB locks
     const tasks = Array.from({ length: 20 }).map((_, index) => {
+      const isTenantA = index % 2 === 0;
+      const tenantId = isTenantA ? "TEN-APEX-01" : "TEN-APEX-02";
+      const token = isTenantA ? process.env.TEST_JWT_TOKEN : process.env.TEST_JWT_TOKEN_B;
+
       return page.request.post(`${BASE_URL}/api/v1/crm/deals`, {
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${process.env.TEST_JWT_TOKEN}`
+          "X-Tenant-Id": tenantId,
+          "Authorization": `Bearer ${token || process.env.TEST_JWT_TOKEN}`
         },
         data: {
           id: `DEAL-STRESS-${index}`,
-          clientName: `شركة_الإجهاد_${index}`,
+          clientName: `شركة_الإجهاد_${index}_${tenantId}`,
           title: `صفقة_ضغط_رقم_${index}`,
           value: 1000 * index,
           stage: "Lead",
@@ -101,7 +106,7 @@ test.describe("ApexSaaS ERP Production Go-Live Tests", () => {
     const responses = await Promise.all(tasks);
     const succeededCount = responses.filter(r => r.ok()).length;
     
-    console.log(`[Stress Test Result] ${succeededCount} / 20 concurrent transactions processed safely with isolation.`);
+    console.log(`[Stress Test Result] ${succeededCount} / 20 concurrent multi-tenant transactions processed safely with RLS isolation.`);
     expect(succeededCount).toBe(20);
   });
 });

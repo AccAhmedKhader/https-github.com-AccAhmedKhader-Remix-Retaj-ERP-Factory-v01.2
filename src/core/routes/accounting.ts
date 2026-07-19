@@ -51,6 +51,13 @@ router.put("/journal-entries/:id", requireScope("accounting:write"), async (req:
     await AccountingRepository.updateJournalEntry(entry, tenantId);
     res.json({ success: true, message: "تم تحديث القيد المحاسبي بنجاح." });
   } catch (error: any) {
+    if (error.message === "CANNOT_MODIFY_POSTED_JOURNAL") {
+      return res.status(400).json({
+        success: false,
+        error: "CANNOT_MODIFY_POSTED_JOURNAL",
+        message: "لا يمكن تعديل قيد محاسبي تم ترحيله بالفعل (Posted)."
+      });
+    }
     if (error.message === "CONCURRENT_WRITE_CONFLICT") {
       await logSecurityAudit(
         (req as any).user?.id || "SYSTEM",

@@ -42,6 +42,49 @@ async function calculateFileHash(filePath: string): Promise<string> {
   });
 }
 
+// Content-based file type (Magic Bytes) validation helper
+export function validateMagicBytes(filePath: string, filename: string): boolean {
+  const ext = path.extname(filename).toLowerCase();
+  
+  // Read first 8 bytes
+  const buffer = Buffer.alloc(8);
+  const fd = fs.openSync(filePath, "r");
+  fs.readSync(fd, buffer, 0, 8, 0);
+  fs.closeSync(fd);
+
+  // Hex representation
+  const hex = buffer.toString("hex").toUpperCase();
+
+  // Validate according to extension
+  if (ext === ".pdf") {
+    return hex.startsWith("25504446"); // %PDF
+  }
+  if (ext === ".png") {
+    return hex.startsWith("89504E47"); // PNG
+  }
+  if (ext === ".jpg" || ext === ".jpeg") {
+    return hex.startsWith("FFD8FF"); // JPEG
+  }
+  if (ext === ".zip") {
+    return hex.startsWith("504B0304") || hex.startsWith("504B0506") || hex.startsWith("504B0708"); // ZIP
+  }
+  if (ext === ".txt") {
+    const isExe = hex.startsWith("4D5A") || hex.startsWith("7F454C46") || hex.startsWith("2321");
+    return !isExe; // Block executables or shell scripts disguised as txt
+  }
+  if (ext === ".docx" || ext === ".xlsx" || ext === ".pptx") {
+    return hex.startsWith("504B0304") || hex.startsWith("504B0506") || hex.startsWith("504B0708"); // ZIP container for Office XML
+  }
+
+  // Reject executable or script file magic signatures if extension is fake
+  const isDangerous = hex.startsWith("4D5A") || hex.startsWith("7F454C46") || hex.startsWith("23212F62"); // MZ (exe), ELF, #!/b (bash script)
+  if (isDangerous) {
+    return false;
+  }
+
+  return true; // Allow other normal formats
+}
+
 // 1. Get document folders (Filtered by ACL)
 router.get("/folders", requireScope("documents:read"), async (req: Request, res: Response) => {
   try {
@@ -142,6 +185,27 @@ router.post("/upload", requireScope("documents:write"), upload.single("file"), a
 
     if (!req.file) {
       return res.status(400).json({ success: false, message: "يرجى اختيار ملف صالح للرفع." });
+    }
+
+    // A.0 Magic Bytes / File Type Content Validation
+    const isSignatureValid = validateMagicBytes(req.file.path, req.file.originalname);
+    if (!isSignatureValid) {
+      try { fs.unlinkSync(req.file.path); } catch (_) {}
+      await logSecurityAudit(
+        userId,
+        tenantId,
+        "FAKE_EXTENSION_UPLOAD_BLOCKED",
+        "documents",
+        "N/A",
+        { filename: req.file.originalname }
+      );
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: "INVALID_FILE_TYPE",
+          message: "عذراً! تم رفض رفع الملف بسبب عدم تطابق توقيع الملف الداخلي (Magic Bytes) مع الامتداد المزعوم."
+        }
+      });
     }
 
     // A. Antivirus and Malware Scanning
@@ -260,6 +324,27 @@ router.post("/upload/background", requireScope("documents:write"), upload.single
 
     if (!req.file) {
       return res.status(400).json({ success: false, message: "يرجى اختيار ملف للرفع في الخلفية." });
+    }
+
+    // A.0 Magic Bytes / File Type Content Validation
+    const isSignatureValid = validateMagicBytes(req.file.path, req.file.originalname);
+    if (!isSignatureValid) {
+      try { fs.unlinkSync(req.file.path); } catch (_) {}
+      await logSecurityAudit(
+        userId,
+        tenantId,
+        "FAKE_EXTENSION_UPLOAD_BLOCKED",
+        "documents",
+        "N/A",
+        { filename: req.file.originalname }
+      );
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: "INVALID_FILE_TYPE",
+          message: "عذراً! تم رفض رفع الملف بسبب عدم تطابق توقيع الملف الداخلي (Magic Bytes) مع الامتداد المزعوم."
+        }
+      });
     }
 
     // Antivirus check
