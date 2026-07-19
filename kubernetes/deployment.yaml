@@ -1,0 +1,101 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apexsaas-erp-deployment
+  namespace: production
+  labels:
+    app: apexsaas-erp
+    tier: backend
+    compliance: gdpr-audited
+spec:
+  replicas: 3
+  revisionHistoryLimit: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: apexsaas-erp
+  template:
+    metadata:
+      labels:
+        app: apexsaas-erp
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: erp-app
+          image: gcr.io/apexsaas-cloud/erp-app:v5.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+              name: http
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1024Mi"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            privileged: false
+            capabilities:
+              drop:
+                - ALL
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: PORT
+              value: "3000"
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: erp-secrets
+                  key: gemini-api-key
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: erp-secrets
+                  key: database-url
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: erp-secrets
+                  key: jwt-secret
+          readinessProbe:
+            httpGet:
+              path: /api/v1/accounting/health
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /api/v1/accounting/health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: erp-secrets
+  namespace: production
+type: Opaque
+data:
+  # Base64 encoded mock values for deployment initialization (rotated securely)
+  gemini-api-key: dGVzdC1nZW1pbmktYXBpLWtleS12YWx1ZQ==
+  database-url: cG9zdGdyZXNxbDovL2Nsb3Vkc3FsLWRidXNlcjpzZWNyZXRwd2RAbG9jYWxob3N0LzMwMDA=
+  jwt-secret: dGhpc2lzYXZlcnlzZWN1cmVqd3RzZWNyZXRzdHJpbmc=

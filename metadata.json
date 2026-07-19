@@ -1,0 +1,8 @@
+{
+  "name": "Remix: Retaj: ERP Factory v01.2",
+  "description": "An interactive enterprise ERP platform and autonomous architecture workspace featuring compliance engines, double-entry simulation, AI accounting assistance, and real-time operations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

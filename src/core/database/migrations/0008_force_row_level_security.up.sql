@@ -1,0 +1,42 @@
+-- Migration: 0008_force_row_level_security.up.sql
+
+-- Enable FORCE ROW LEVEL SECURITY on all 20 tables
+ALTER TABLE branches FORCE ROW LEVEL SECURITY;
+ALTER TABLE users FORCE ROW LEVEL SECURITY;
+ALTER TABLE roles FORCE ROW LEVEL SECURITY;
+ALTER TABLE accounts FORCE ROW LEVEL SECURITY;
+ALTER TABLE journal_entries FORCE ROW LEVEL SECURITY;
+ALTER TABLE journal_lines FORCE ROW LEVEL SECURITY;
+ALTER TABLE customers FORCE ROW LEVEL SECURITY;
+ALTER TABLE suppliers FORCE ROW LEVEL SECURITY;
+ALTER TABLE warehouses FORCE ROW LEVEL SECURITY;
+ALTER TABLE stock_items FORCE ROW LEVEL SECURITY;
+ALTER TABLE inventory_transactions FORCE ROW LEVEL SECURITY;
+ALTER TABLE sales_invoices FORCE ROW LEVEL SECURITY;
+ALTER TABLE sales_invoice_items FORCE ROW LEVEL SECURITY;
+ALTER TABLE purchase_invoices FORCE ROW LEVEL SECURITY;
+ALTER TABLE purchase_invoice_items FORCE ROW LEVEL SECURITY;
+ALTER TABLE cheques FORCE ROW LEVEL SECURITY;
+ALTER TABLE customer_payments FORCE ROW LEVEL SECURITY;
+ALTER TABLE supplier_payments FORCE ROW LEVEL SECURITY;
+ALTER TABLE party_ledger_entries FORCE ROW LEVEL SECURITY;
+ALTER TABLE audit_logs FORCE ROW LEVEL SECURITY;
+
+-- Create erp_app_role operational role
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'erp_app_role') THEN
+    CREATE ROLE erp_app_role LOGIN PASSWORD 'ErpAppSecurePass2026!';
+  END IF;
+END
+$$;
+
+-- Grant DML privileges on all existing tables to erp_app_role
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO erp_app_role;
+
+-- Grant permissions for future tables
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO erp_app_role;
+
+-- erp_app_role also needs permissions on sequences if any
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO erp_app_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO erp_app_role;

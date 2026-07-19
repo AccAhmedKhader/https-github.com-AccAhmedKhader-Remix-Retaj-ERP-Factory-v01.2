@@ -1,0 +1,17 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# Local database and compressed archives
+erp.db/
+*.tar.gz
+*.zip
+
+# Ignore generic SQL dumps, but keep schema migration SQL files
+*.sql
+!/src/core/database/migrations/**/*.sql

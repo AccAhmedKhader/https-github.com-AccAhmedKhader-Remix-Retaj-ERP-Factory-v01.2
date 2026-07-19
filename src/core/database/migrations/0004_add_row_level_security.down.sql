@@ -1,0 +1,43 @@
+-- Migration: 0004_add_row_level_security.down.sql
+
+DROP POLICY IF EXISTS tenant_isolation_branches ON branches;
+DROP POLICY IF EXISTS tenant_isolation_users ON users;
+DROP POLICY IF EXISTS tenant_isolation_roles ON roles;
+DROP POLICY IF EXISTS tenant_isolation_accounts ON accounts;
+DROP POLICY IF EXISTS tenant_isolation_journal_entries ON journal_entries;
+DROP POLICY IF EXISTS tenant_isolation_journal_lines ON journal_lines;
+DROP POLICY IF EXISTS tenant_isolation_customers ON customers;
+DROP POLICY IF EXISTS tenant_isolation_suppliers ON suppliers;
+DROP POLICY IF EXISTS tenant_isolation_warehouses ON warehouses;
+DROP POLICY IF EXISTS tenant_isolation_stock_items ON stock_items;
+DROP POLICY IF EXISTS tenant_isolation_inventory_transactions ON inventory_transactions;
+DROP POLICY IF EXISTS tenant_isolation_sales_invoices ON sales_invoices;
+DROP POLICY IF EXISTS tenant_isolation_sales_invoice_items ON sales_invoice_items;
+DROP POLICY IF EXISTS tenant_isolation_purchase_invoices ON purchase_invoices;
+DROP POLICY IF EXISTS tenant_isolation_purchase_invoice_items ON purchase_invoice_items;
+DROP POLICY IF EXISTS tenant_isolation_cheques ON cheques;
+DROP POLICY IF EXISTS tenant_isolation_customer_payments ON customer_payments;
+DROP POLICY IF EXISTS tenant_isolation_supplier_payments ON supplier_payments;
+DROP POLICY IF EXISTS tenant_isolation_party_ledger_entries ON party_ledger_entries;
+DROP POLICY IF EXISTS tenant_isolation_audit_logs ON audit_logs;
+
+ALTER TABLE branches DISABLE ROW LEVEL SECURITY;
+ALTER TABLE users DISABLE ROW LEVEL SECURITY;
+ALTER TABLE roles DISABLE ROW LEVEL SECURITY;
+ALTER TABLE accounts DISABLE ROW LEVEL SECURITY;
+ALTER TABLE journal_entries DISABLE ROW LEVEL SECURITY;
+ALTER TABLE journal_lines DISABLE ROW LEVEL SECURITY;
+ALTER TABLE customers DISABLE ROW LEVEL SECURITY;
+ALTER TABLE suppliers DISABLE ROW LEVEL SECURITY;
+ALTER TABLE warehouses DISABLE ROW LEVEL SECURITY;
+ALTER TABLE stock_items DISABLE ROW LEVEL SECURITY;
+ALTER TABLE inventory_transactions DISABLE ROW LEVEL SECURITY;
+ALTER TABLE sales_invoices DISABLE ROW LEVEL SECURITY;
+ALTER TABLE sales_invoice_items DISABLE ROW LEVEL SECURITY;
+ALTER TABLE purchase_invoices DISABLE ROW LEVEL SECURITY;
+ALTER TABLE purchase_invoice_items DISABLE ROW LEVEL SECURITY;
+ALTER TABLE cheques DISABLE ROW LEVEL SECURITY;
+ALTER TABLE customer_payments DISABLE ROW LEVEL SECURITY;
+ALTER TABLE supplier_payments DISABLE ROW LEVEL SECURITY;
+ALTER TABLE party_ledger_entries DISABLE ROW LEVEL SECURITY;
+ALTER TABLE audit_logs DISABLE ROW LEVEL SECURITY;
