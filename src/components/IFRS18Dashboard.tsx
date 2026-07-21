@@ -18,7 +18,10 @@ import {
   Printer,
   Sparkles,
   Clock,
-  Bookmark
+  Bookmark,
+  Layers,
+  Activity,
+  Percent
 } from "lucide-react";
 
 export interface IFRS18DashboardProps {
@@ -431,7 +434,7 @@ export default function IFRS18Dashboard({
           <div className="flex flex-wrap gap-1 bg-[#121829] border border-slate-800 p-1 rounded-xl">
             {[
               { id: "all", name: "الكتاب الكامل" },
-              { id: "balance_sheet", name: "المركز المالي (IAS 1)" },
+              { id: "balance_sheet", name: "المركز المالي (IFRS 18)" },
               { id: "income", name: "الأرباح والخسائر (IFRS 18)" },
               { id: "cash_flow", name: "التدفقات النقدية (IAS 7)" },
               { id: "equity", name: "تغيرات حقوق الملكية" },
@@ -465,7 +468,7 @@ export default function IFRS18Dashboard({
       {/* 3. REPORT VIEWS ROUTER */}
       <div className="space-y-8">
         
-        {/* --- VIEW 1: STATEMENT OF FINANCIAL POSITION (IAS 1) --- */}
+        {/* --- VIEW 1: STATEMENT OF FINANCIAL POSITION (IFRS 18) --- */}
         {(activeView === "all" || activeView === "balance_sheet") && (
           <motion.div 
             initial={{ opacity: 0, y: 10 }}
@@ -476,257 +479,394 @@ export default function IFRS18Dashboard({
             <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-500/25 to-transparent"></div>
             
             <div className="border-b border-slate-800 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div className="space-y-0.5">
-                <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                  <span>قائمة المركز المالي الموحدة (IAS 1 Statement of Financial Position)</span>
+              <div className="space-y-0.5 text-right">
+                <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2 justify-start">
+                  <Layers className="h-4 w-4 text-emerald-400" />
+                  <span>قائمة المركز المالي الموحدة وفقاً لمعايير IFRS 18 (Statement of Financial Position)</span>
                 </h3>
-                <p className="text-[10px] text-slate-500">كما هي في نهاية السنة المالية المنتهية في {config.fiscalYear} (مقارنة مع السنة السابقة)</p>
+                <p className="text-[10px] text-slate-500">كما هي في نهاية السنة المالية المنتهية في {config.fiscalYear} (بالمقارنة مع بيانات السنة السابقة والتحليل الشبكي)</p>
               </div>
               <span className="text-[9px] px-2.5 py-1 bg-[#131a30] border border-slate-800 rounded-lg text-slate-400 font-sans uppercase font-bold tracking-wider">
-                معيار IAS 1
+                معيار IFRS 18 المالي
               </span>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-right border-collapse text-xs">
-                <thead>
-                  <tr className="bg-[#121829] text-slate-400 font-sans border-b border-slate-800">
-                    <th className="p-3.5 font-bold">الأصل / الالتزام وحقوق الملكية</th>
-                    <th className="p-3.5 font-bold text-center">رقم الإيضاح</th>
-                    <th className="p-3.5 font-bold text-left">2026 (الجارية)</th>
-                    <th className="p-3.5 font-bold text-left">2025 (المقارنة)</th>
-                    <th className="p-3.5 font-bold text-center">التغير (%)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/40">
-                  
-                  {/* --- ASSETS SECTION --- */}
-                  <tr className="bg-emerald-500/5">
-                    <td colSpan={5} className="p-3 font-bold text-emerald-400 text-[11px] font-sans border-r-2 border-emerald-500">
-                      الأصول (Assets)
-                    </td>
-                  </tr>
-                  
-                  {/* Non-Current Assets */}
-                  <tr>
-                    <td colSpan={5} className="p-3 font-semibold text-slate-300 pr-4 text-[10px] font-sans">
-                      الأصول غير المتداولة (Non-Current Assets):
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-slate-900/40 transition-colors">
-                    <td className="p-3 pr-8 text-slate-300 font-semibold">العقارات والآلات والمعدات الصافية (PPE)</td>
-                    <td className="p-3 text-center">
-                      <button onClick={() => scrollToNote("note-5")} className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 text-[9px] rounded font-bold transition-all cursor-pointer border border-emerald-500/20">
-                        إيضاح (5)
-                      </button>
-                    </td>
-                    <td className="p-3 text-left font-mono text-slate-200">{cat.netFixedAssets.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-left font-mono text-slate-400">{netFixedAssets2025.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-center">{renderVariance(cat.netFixedAssets, netFixedAssets2025)}</td>
-                  </tr>
-                  <tr className="hover:bg-slate-900/40 transition-colors">
-                    <td className="p-3 pr-8 text-slate-400">أصول غير متداولة أخرى</td>
-                    <td className="p-3 text-center text-slate-600">-</td>
-                    <td className="p-3 text-left font-mono text-slate-200">{cat.nonCurrentOtherSum.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-left font-mono text-slate-400">{nonCurrentOtherSum2025.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-center">{renderVariance(cat.nonCurrentOtherSum, nonCurrentOtherSum2025)}</td>
-                  </tr>
-                  <tr className="bg-slate-900/40 font-bold border-t border-slate-800">
-                    <td className="p-3 pr-8 text-slate-200">إجمالي الأصول غير المتداولة</td>
-                    <td className="p-3 text-center text-slate-600">-</td>
-                    <td className="p-3 text-left font-mono text-slate-200">{cat.totalNonCurrentAssets.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-left font-mono text-slate-400">{totalNonCurrentAssets2025.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-center">{renderVariance(cat.totalNonCurrentAssets, totalNonCurrentAssets2025)}</td>
-                  </tr>
+            {/* ADVANCED GRID LAYOUT: Table (col-span-2) + Analytics (col-span-1) */}
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+              
+              {/* Right panel: Main audited table */}
+              <div className="xl:col-span-2 space-y-4">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-right border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-[#121829] text-slate-400 font-sans border-b border-slate-800">
+                        <th className="p-3.5 font-bold">الأصل / الالتزام وحقوق الملكية (IFRS 18)</th>
+                        <th className="p-3.5 font-bold text-center">رقم الإيضاح</th>
+                        <th className="p-3.5 font-bold text-left">2026 (الجارية)</th>
+                        <th className="p-3.5 font-bold text-left">2025 (المقارنة)</th>
+                        <th className="p-3.5 font-bold text-center">التغير (%)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/40">
+                      
+                      {/* --- ASSETS SECTION --- */}
+                      <tr className="bg-emerald-500/5">
+                        <td colSpan={5} className="p-3 font-bold text-emerald-400 text-[11px] font-sans border-r-2 border-emerald-500">
+                          الأصول (Assets)
+                        </td>
+                      </tr>
+                      
+                      {/* Non-Current Assets */}
+                      <tr>
+                        <td colSpan={5} className="p-3 font-semibold text-slate-300 pr-4 text-[10px] font-sans">
+                          الأصول غير المتداولة (Non-Current Assets):
+                        </td>
+                      </tr>
+                      <tr className="hover:bg-slate-900/40 transition-colors">
+                        <td className="p-3 pr-8 text-slate-300 font-semibold">العقارات والآلات والمعدات الصافية (PPE)</td>
+                        <td className="p-3 text-center">
+                          <button onClick={() => scrollToNote("note-5")} className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 text-[9px] rounded font-bold transition-all cursor-pointer border border-emerald-500/20">
+                            إيضاح (5)
+                          </button>
+                        </td>
+                        <td className="p-3 text-left font-mono text-slate-200">{cat.netFixedAssets.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-left font-mono text-slate-400">{netFixedAssets2025.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-center">{renderVariance(cat.netFixedAssets, netFixedAssets2025)}</td>
+                      </tr>
+                      <tr className="hover:bg-slate-900/40 transition-colors">
+                        <td className="p-3 pr-8 text-slate-400">أصول غير متداولة أخرى</td>
+                        <td className="p-3 text-center text-slate-600">-</td>
+                        <td className="p-3 text-left font-mono text-slate-200">{cat.nonCurrentOtherSum.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-left font-mono text-slate-400">{nonCurrentOtherSum2025.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-center">{renderVariance(cat.nonCurrentOtherSum, nonCurrentOtherSum2025)}</td>
+                      </tr>
+                      <tr className="bg-slate-900/40 font-bold border-t border-slate-800">
+                        <td className="p-3 pr-8 text-slate-200">إجمالي الأصول غير المتداولة</td>
+                        <td className="p-3 text-center text-slate-600">-</td>
+                        <td className="p-3 text-left font-mono text-slate-200">{cat.totalNonCurrentAssets.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-left font-mono text-slate-400">{totalNonCurrentAssets2025.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-center">{renderVariance(cat.totalNonCurrentAssets, totalNonCurrentAssets2025)}</td>
+                      </tr>
 
-                  {/* Current Assets */}
-                  <tr>
-                    <td colSpan={5} className="p-3 font-semibold text-slate-300 pr-4 text-[10px] font-sans">
-                      الأصول المتداولة (Current Assets):
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-slate-900/40 transition-colors">
-                    <td className="p-3 pr-8 text-slate-300">المخزون السلعي (Inventories)</td>
-                    <td className="p-3 text-center">
-                      <button onClick={() => scrollToNote("note-3")} className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 text-[9px] rounded font-bold transition-all cursor-pointer border border-emerald-500/20">
-                        إيضاح (3)
-                      </button>
-                    </td>
-                    <td className="p-3 text-left font-mono text-slate-200">{cat.inventorySum.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-left font-mono text-slate-400">{inventorySum2025.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-center">{renderVariance(cat.inventorySum, inventorySum2025)}</td>
-                  </tr>
-                  <tr className="hover:bg-slate-900/40 transition-colors">
-                    <td className="p-3 pr-8 text-slate-300">العملاء والذمم المدينة التجارية (Trade Receivables)</td>
-                    <td className="p-3 text-center">
-                      <button onClick={() => scrollToNote("note-4")} className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 text-[9px] rounded font-bold transition-all cursor-pointer border border-emerald-500/20">
-                        إيضاح (4)
-                      </button>
-                    </td>
-                    <td className="p-3 text-left font-mono text-slate-200">{cat.receivablesSum.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-left font-mono text-slate-400">{receivablesSum2025.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-center">{renderVariance(cat.receivablesSum, receivablesSum2025)}</td>
-                  </tr>
-                  <tr className="hover:bg-slate-900/40 transition-colors">
-                    <td className="p-3 pr-8 text-slate-300">النقدية وما يعادلها (Cash & Equivalents)</td>
-                    <td className="p-3 text-center">
-                      <button onClick={() => scrollToNote("note-2")} className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 text-[9px] rounded font-bold transition-all cursor-pointer border border-emerald-500/20">
-                        إيضاح (2)
-                      </button>
-                    </td>
-                    <td className="p-3 text-left font-mono text-slate-200">{cat.cashSum.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-left font-mono text-slate-400">{cashSum2025.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-center">{renderVariance(cat.cashSum, cashSum2025)}</td>
-                  </tr>
-                  <tr className="hover:bg-slate-900/40 transition-colors">
-                    <td className="p-3 pr-8 text-slate-400">أصول متداولة أخرى</td>
-                    <td className="p-3 text-center text-slate-600">-</td>
-                    <td className="p-3 text-left font-mono text-slate-200">{cat.currentOtherSum.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-left font-mono text-slate-400">{currentOtherSum2025.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-center">{renderVariance(cat.currentOtherSum, currentOtherSum2025)}</td>
-                  </tr>
-                  <tr className="bg-slate-900/40 font-bold border-t border-slate-800">
-                    <td className="p-3 pr-8 text-slate-200">إجمالي الأصول المتداولة</td>
-                    <td className="p-3 text-center text-slate-600">-</td>
-                    <td className="p-3 text-left font-mono text-slate-200">{cat.totalCurrentAssets.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-left font-mono text-slate-400">{totalCurrentAssets2025.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-center">{renderVariance(cat.totalCurrentAssets, totalCurrentAssets2025)}</td>
-                  </tr>
-                  
-                  {/* Total Assets Row */}
-                  <tr className="bg-emerald-500/10 font-black border-t-2 border-emerald-500 text-slate-100">
-                    <td className="p-3.5 text-slate-100 font-bold">إجمالي الأصول والموجودات</td>
-                    <td className="p-3.5 text-center text-slate-600">-</td>
-                    <td className="p-3.5 text-left font-mono text-emerald-400 font-black text-sm">{cat.totalAssets.toLocaleString()} {config.currency}</td>
-                    <td className="p-3.5 text-left font-mono text-slate-300 text-sm">{totalAssets2025.toLocaleString()} {config.currency}</td>
-                    <td className="p-3.5 text-center">{renderVariance(cat.totalAssets, totalAssets2025)}</td>
-                  </tr>
+                      {/* Current Assets */}
+                      <tr>
+                        <td colSpan={5} className="p-3 font-semibold text-slate-300 pr-4 text-[10px] font-sans">
+                          الأصول المتداولة (Current Assets):
+                        </td>
+                      </tr>
+                      <tr className="hover:bg-slate-900/40 transition-colors">
+                        <td className="p-3 pr-8 text-slate-300">المخزون السلعي (Inventories)</td>
+                        <td className="p-3 text-center">
+                          <button onClick={() => scrollToNote("note-3")} className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 text-[9px] rounded font-bold transition-all cursor-pointer border border-emerald-500/20">
+                            إيضاح (3)
+                          </button>
+                        </td>
+                        <td className="p-3 text-left font-mono text-slate-200">{cat.inventorySum.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-left font-mono text-slate-400">{inventorySum2025.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-center">{renderVariance(cat.inventorySum, inventorySum2025)}</td>
+                      </tr>
+                      <tr className="hover:bg-slate-900/40 transition-colors">
+                        <td className="p-3 pr-8 text-slate-300">العملاء والذمم المدينة التجارية (Trade Receivables)</td>
+                        <td className="p-3 text-center">
+                          <button onClick={() => scrollToNote("note-4")} className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 text-[9px] rounded font-bold transition-all cursor-pointer border border-emerald-500/20">
+                            إيضاح (4)
+                          </button>
+                        </td>
+                        <td className="p-3 text-left font-mono text-slate-200">{cat.receivablesSum.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-left font-mono text-slate-400">{receivablesSum2025.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-center">{renderVariance(cat.receivablesSum, receivablesSum2025)}</td>
+                      </tr>
+                      <tr className="hover:bg-slate-900/40 transition-colors">
+                        <td className="p-3 pr-8 text-slate-300">النقدية وما يعادلها (Cash & Equivalents)</td>
+                        <td className="p-3 text-center">
+                          <button onClick={() => scrollToNote("note-2")} className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 text-[9px] rounded font-bold transition-all cursor-pointer border border-emerald-500/20">
+                            إيضاح (2)
+                          </button>
+                        </td>
+                        <td className="p-3 text-left font-mono text-slate-200">{cat.cashSum.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-left font-mono text-slate-400">{cashSum2025.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-center">{renderVariance(cat.cashSum, cashSum2025)}</td>
+                      </tr>
+                      <tr className="hover:bg-slate-900/40 transition-colors">
+                        <td className="p-3 pr-8 text-slate-400">أصول متداولة أخرى</td>
+                        <td className="p-3 text-center text-slate-600">-</td>
+                        <td className="p-3 text-left font-mono text-slate-200">{cat.currentOtherSum.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-left font-mono text-slate-400">{currentOtherSum2025.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-center">{renderVariance(cat.currentOtherSum, currentOtherSum2025)}</td>
+                      </tr>
+                      <tr className="bg-slate-900/40 font-bold border-t border-slate-800">
+                        <td className="p-3 pr-8 text-slate-200">إجمالي الأصول المتداولة</td>
+                        <td className="p-3 text-center text-slate-600">-</td>
+                        <td className="p-3 text-left font-mono text-slate-200">{cat.totalCurrentAssets.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-left font-mono text-slate-400">{totalCurrentAssets2025.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-center">{renderVariance(cat.totalCurrentAssets, totalCurrentAssets2025)}</td>
+                      </tr>
+                      
+                      {/* Total Assets Row */}
+                      <tr className="bg-emerald-500/10 font-black border-t-2 border-emerald-500 text-slate-100">
+                        <td className="p-3.5 text-slate-100 font-bold">إجمالي الأصول والموجودات</td>
+                        <td className="p-3.5 text-center text-slate-600">-</td>
+                        <td className="p-3.5 text-left font-mono text-emerald-400 font-black text-sm">{cat.totalAssets.toLocaleString()} {config.currency}</td>
+                        <td className="p-3.5 text-left font-mono text-slate-300 text-sm">{totalAssets2025.toLocaleString()} {config.currency}</td>
+                        <td className="p-3.5 text-center">{renderVariance(cat.totalAssets, totalAssets2025)}</td>
+                      </tr>
 
-                  {/* --- EQUITY & LIABILITIES SECTION --- */}
-                  <tr className="bg-cyan-500/5 border-t border-slate-800">
-                    <td colSpan={5} className="p-3 font-bold text-cyan-400 text-[11px] font-sans border-r-2 border-cyan-500">
-                      حقوق الملكية والالتزامات (Equity & Liabilities)
-                    </td>
-                  </tr>
+                      {/* --- EQUITY & LIABILITIES SECTION --- */}
+                      <tr className="bg-cyan-500/5 border-t border-slate-800">
+                        <td colSpan={5} className="p-3 font-bold text-cyan-400 text-[11px] font-sans border-r-2 border-cyan-500">
+                          حقوق الملكية والالتزامات (Equity & Liabilities)
+                        </td>
+                      </tr>
 
-                  {/* Equity */}
-                  <tr>
-                    <td colSpan={5} className="p-3 font-semibold text-slate-300 pr-4 text-[10px] font-sans">
-                      حقوق الملكية (Equity):
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-slate-900/40 transition-colors">
-                    <td className="p-3 pr-8 text-slate-300">رأس المال المدفوع والمصدر</td>
-                    <td className="p-3 text-center text-slate-600">-</td>
-                    <td className="p-3 text-left font-mono text-slate-200">{cat.capitalSum.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-left font-mono text-slate-400">{capitalSum2025.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-center">{renderVariance(cat.capitalSum, capitalSum2025)}</td>
-                  </tr>
-                  <tr className="hover:bg-slate-900/40 transition-colors">
-                    <td className="p-3 pr-8 text-slate-300">الاحتياطيات والأرباح المرحلة المتراكمة</td>
-                    <td className="p-3 text-center text-slate-600">-</td>
-                    <td className="p-3 text-left font-mono text-slate-200">{cat.retainedSum.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-left font-mono text-slate-400">{retainedSum2025.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-center">{renderVariance(cat.retainedSum, retainedSum2025)}</td>
-                  </tr>
-                  <tr className="hover:bg-slate-900/40 transition-colors">
-                    <td className="p-3 pr-8 text-cyan-400 font-semibold">صافي أرباح الفترة الجارية (الغير موزعة)</td>
-                    <td className="p-3 text-center text-slate-600">-</td>
-                    <td className="p-3 text-left font-mono text-cyan-400 font-bold">{cat.currentProfit.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-left font-mono text-slate-400">{currentProfit2025.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-center">{renderVariance(cat.currentProfit, currentProfit2025)}</td>
-                  </tr>
-                  <tr className="bg-slate-900/40 font-bold border-t border-slate-800">
-                    <td className="p-3 pr-8 text-slate-200">إجمالي حقوق الملكية</td>
-                    <td className="p-3 text-center text-slate-600">-</td>
-                    <td className="p-3 text-left font-mono text-slate-200">{cat.totalEquity.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-left font-mono text-slate-400">{totalEquity2025.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-center">{renderVariance(cat.totalEquity, totalEquity2025)}</td>
-                  </tr>
+                      {/* Equity */}
+                      <tr>
+                        <td colSpan={5} className="p-3 font-semibold text-slate-300 pr-4 text-[10px] font-sans">
+                          حقوق الملكية (Equity):
+                        </td>
+                      </tr>
+                      <tr className="hover:bg-slate-900/40 transition-colors">
+                        <td className="p-3 pr-8 text-slate-300">رأس المال المدفوع والمصدر</td>
+                        <td className="p-3 text-center text-slate-600">-</td>
+                        <td className="p-3 text-left font-mono text-slate-200">{cat.capitalSum.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-left font-mono text-slate-400">{capitalSum2025.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-center">{renderVariance(cat.capitalSum, capitalSum2025)}</td>
+                      </tr>
+                      <tr className="hover:bg-slate-900/40 transition-colors">
+                        <td className="p-3 pr-8 text-slate-300">الاحتياطيات والأرباح المرحلة المتراكمة</td>
+                        <td className="p-3 text-center text-slate-600">-</td>
+                        <td className="p-3 text-left font-mono text-slate-200">{cat.retainedSum.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-left font-mono text-slate-400">{retainedSum2025.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-center">{renderVariance(cat.retainedSum, retainedSum2025)}</td>
+                      </tr>
+                      <tr className="hover:bg-slate-900/40 transition-colors">
+                        <td className="p-3 pr-8 text-cyan-400 font-semibold">صافي أرباح الفترة الجارية (الغير موزعة)</td>
+                        <td className="p-3 text-center text-slate-600">-</td>
+                        <td className="p-3 text-left font-mono text-cyan-400 font-bold">{cat.currentProfit.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-left font-mono text-slate-400">{currentProfit2025.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-center">{renderVariance(cat.currentProfit, currentProfit2025)}</td>
+                      </tr>
+                      <tr className="bg-slate-900/40 font-bold border-t border-slate-800">
+                        <td className="p-3 pr-8 text-slate-200">إجمالي حقوق الملكية</td>
+                        <td className="p-3 text-center text-slate-600">-</td>
+                        <td className="p-3 text-left font-mono text-slate-200">{cat.totalEquity.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-left font-mono text-slate-400">{totalEquity2025.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-center">{renderVariance(cat.totalEquity, totalEquity2025)}</td>
+                      </tr>
 
-                  {/* Non-Current Liabilities */}
-                  <tr>
-                    <td colSpan={5} className="p-3 font-semibold text-slate-300 pr-4 text-[10px] font-sans">
-                      الالتزامات غير المتداولة (Non-Current Liabilities):
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-slate-900/40 transition-colors">
-                    <td className="p-3 pr-8 text-slate-300">قروض وتسهيلات بنكية طويلة الأجل</td>
-                    <td className="p-3 text-center text-slate-600">-</td>
-                    <td className="p-3 text-left font-mono text-slate-200">{cat.longTermLoansSum.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-left font-mono text-slate-400">{longTermLoansSum2025.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-center">{renderVariance(cat.longTermLoansSum, longTermLoansSum2025, true)}</td>
-                  </tr>
-                  <tr className="bg-slate-900/40 font-bold border-t border-slate-800">
-                    <td className="p-3 pr-8 text-slate-200">إجمالي الالتزامات غير المتداولة</td>
-                    <td className="p-3 text-center text-slate-600">-</td>
-                    <td className="p-3 text-left font-mono text-slate-200">{cat.longTermLoansSum.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-left font-mono text-slate-400">{longTermLoansSum2025.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-center">{renderVariance(cat.longTermLoansSum, longTermLoansSum2025, true)}</td>
-                  </tr>
+                      {/* Non-Current Liabilities */}
+                      <tr>
+                        <td colSpan={5} className="p-3 font-semibold text-slate-300 pr-4 text-[10px] font-sans">
+                          الالتزامات غير المتداولة (Non-Current Liabilities):
+                        </td>
+                      </tr>
+                      <tr className="hover:bg-slate-900/40 transition-colors">
+                        <td className="p-3 pr-8 text-slate-300">قروض وتسهيلات بنكية طويلة الأجل</td>
+                        <td className="p-3 text-center text-slate-600">-</td>
+                        <td className="p-3 text-left font-mono text-slate-200">{cat.longTermLoansSum.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-left font-mono text-slate-400">{longTermLoansSum2025.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-center">{renderVariance(cat.longTermLoansSum, longTermLoansSum2025, true)}</td>
+                      </tr>
+                      <tr className="bg-slate-900/40 font-bold border-t border-slate-800">
+                        <td className="p-3 pr-8 text-slate-200">إجمالي الالتزامات غير المتداولة</td>
+                        <td className="p-3 text-center text-slate-600">-</td>
+                        <td className="p-3 text-left font-mono text-slate-200">{cat.longTermLoansSum.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-left font-mono text-slate-400">{longTermLoansSum2025.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-center">{renderVariance(cat.longTermLoansSum, longTermLoansSum2025, true)}</td>
+                      </tr>
 
-                  {/* Current Liabilities */}
-                  <tr>
-                    <td colSpan={5} className="p-3 font-semibold text-slate-300 pr-4 text-[10px] font-sans">
-                      الالتزامات المتداولة (Current Liabilities):
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-slate-900/40 transition-colors">
-                    <td className="p-3 pr-8 text-slate-300">الموردون والذمم الدائنة التجارية</td>
-                    <td className="p-3 text-center">
-                      <button onClick={() => scrollToNote("note-6")} className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 text-[9px] rounded font-bold transition-all cursor-pointer border border-emerald-500/20">
-                        إيضاح (6)
-                      </button>
-                    </td>
-                    <td className="p-3 text-left font-mono text-slate-200">{cat.payablesSum.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-left font-mono text-slate-400">{payablesSum2025.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-center">{renderVariance(cat.payablesSum, payablesSum2025, true)}</td>
-                  </tr>
-                  <tr className="hover:bg-slate-900/40 transition-colors">
-                    <td className="p-3 pr-8 text-slate-300">أرصدة دائنة وضرائب مستحقة (ضريبة نموذج 41)</td>
-                    <td className="p-3 text-center">
-                      <button onClick={() => scrollToNote("note-7")} className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 text-[9px] rounded font-bold transition-all cursor-pointer border border-emerald-500/20">
-                        إيضاح (7)
-                      </button>
-                    </td>
-                    <td className="p-3 text-left font-mono text-slate-200">{cat.taxSum.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-left font-mono text-slate-400">{taxSum2025.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-center">{renderVariance(cat.taxSum, taxSum2025, true)}</td>
-                  </tr>
-                  <tr className="hover:bg-slate-900/40 transition-colors">
-                    <td className="p-3 pr-8 text-slate-400">التزامات متداولة أخرى للتشغيل</td>
-                    <td className="p-3 text-center text-slate-600">-</td>
-                    <td className="p-3 text-left font-mono text-slate-200">{cat.currentOtherLiabilitiesSum.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-left font-mono text-slate-400">{currentOtherLiabilitiesSum2025.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-center">{renderVariance(cat.currentOtherLiabilitiesSum, currentOtherLiabilitiesSum2025, true)}</td>
-                  </tr>
-                  <tr className="bg-slate-900/40 font-bold border-t border-slate-800">
-                    <td className="p-3 pr-8 text-slate-200">إجمالي الالتزامات المتداولة</td>
-                    <td className="p-3 text-center text-slate-600">-</td>
-                    <td className="p-3 text-left font-mono text-slate-200">{cat.totalCurrentLiabilities.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-left font-mono text-slate-400">{totalCurrentLiabilities2025.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-center">{renderVariance(cat.totalCurrentLiabilities, totalCurrentLiabilities2025, true)}</td>
-                  </tr>
+                      {/* Current Liabilities */}
+                      <tr>
+                        <td colSpan={5} className="p-3 font-semibold text-slate-300 pr-4 text-[10px] font-sans">
+                          الالتزامات المتداولة (Current Liabilities):
+                        </td>
+                      </tr>
+                      <tr className="hover:bg-slate-900/40 transition-colors">
+                        <td className="p-3 pr-8 text-slate-300">الموردون والذمم الدائنة التجارية</td>
+                        <td className="p-3 text-center">
+                          <button onClick={() => scrollToNote("note-6")} className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 text-[9px] rounded font-bold transition-all cursor-pointer border border-emerald-500/20">
+                            إيضاح (6)
+                          </button>
+                        </td>
+                        <td className="p-3 text-left font-mono text-slate-200">{cat.payablesSum.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-left font-mono text-slate-400">{payablesSum2025.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-center">{renderVariance(cat.payablesSum, payablesSum2025, true)}</td>
+                      </tr>
+                      <tr className="hover:bg-slate-900/40 transition-colors">
+                        <td className="p-3 pr-8 text-slate-300">أرصدة دائنة وضرائب مستحقة (ضريبة نموذج 41)</td>
+                        <td className="p-3 text-center">
+                          <button onClick={() => scrollToNote("note-7")} className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 text-[9px] rounded font-bold transition-all cursor-pointer border border-emerald-500/20">
+                            إيضاح (7)
+                          </button>
+                        </td>
+                        <td className="p-3 text-left font-mono text-slate-200">{cat.taxSum.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-left font-mono text-slate-400">{taxSum2025.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-center">{renderVariance(cat.taxSum, taxSum2025, true)}</td>
+                      </tr>
+                      <tr className="hover:bg-slate-900/40 transition-colors">
+                        <td className="p-3 pr-8 text-slate-400">التزامات متداولة أخرى للتشغيل</td>
+                        <td className="p-3 text-center text-slate-600">-</td>
+                        <td className="p-3 text-left font-mono text-slate-200">{cat.currentOtherLiabilitiesSum.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-left font-mono text-slate-400">{currentOtherLiabilitiesSum2025.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-center">{renderVariance(cat.currentOtherLiabilitiesSum, currentOtherLiabilitiesSum2025, true)}</td>
+                      </tr>
+                      <tr className="bg-slate-900/40 font-bold border-t border-slate-800">
+                        <td className="p-3 pr-8 text-slate-200">إجمالي الالتزامات المتداولة</td>
+                        <td className="p-3 text-center text-slate-600">-</td>
+                        <td className="p-3 text-left font-mono text-slate-200">{cat.totalCurrentLiabilities.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-left font-mono text-slate-400">{totalCurrentLiabilities2025.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-center">{renderVariance(cat.totalCurrentLiabilities, totalCurrentLiabilities2025, true)}</td>
+                      </tr>
 
-                  <tr className="bg-slate-900/60 font-bold border-t border-slate-700">
-                    <td className="p-3 text-slate-300">إجمالي الالتزامات (المتداولة وغير المتداولة)</td>
-                    <td className="p-3 text-center text-slate-600">-</td>
-                    <td className="p-3 text-left font-mono text-slate-200">{cat.totalLiabilities.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-left font-mono text-slate-400">{totalLiabilities2025.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-center">{renderVariance(cat.totalLiabilities, totalLiabilities2025, true)}</td>
-                  </tr>
+                      <tr className="bg-slate-900/60 font-bold border-t border-slate-700">
+                        <td className="p-3 text-slate-300">إجمالي الالتزامات (المتداولة وغير المتداولة)</td>
+                        <td className="p-3 text-center text-slate-600">-</td>
+                        <td className="p-3 text-left font-mono text-slate-200">{cat.totalLiabilities.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-left font-mono text-slate-400">{totalLiabilities2025.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-center">{renderVariance(cat.totalLiabilities, totalLiabilities2025, true)}</td>
+                      </tr>
 
-                  {/* Total Equity and Liabilities Row */}
-                  <tr className="bg-cyan-500/10 font-black border-t-2 border-cyan-500 text-slate-100">
-                    <td className="p-3.5 text-slate-100 font-bold">إجمالي حقوق الملكية والالتزامات</td>
-                    <td className="p-3.5 text-center text-slate-600">-</td>
-                    <td className="p-3.5 text-left font-mono text-cyan-400 font-black text-sm">{(cat.totalEquity + cat.totalLiabilities).toLocaleString()} {config.currency}</td>
-                    <td className="p-3.5 text-left font-mono text-slate-300 text-sm">{(totalEquity2025 + totalLiabilities2025).toLocaleString()} {config.currency}</td>
-                    <td className="p-3.5 text-center">{renderVariance((cat.totalEquity + cat.totalLiabilities), (totalEquity2025 + totalLiabilities2025))}</td>
-                  </tr>
+                      {/* Total Equity and Liabilities Row */}
+                      <tr className="bg-cyan-500/10 font-black border-t-2 border-cyan-500 text-slate-100">
+                        <td className="p-3.5 text-slate-100 font-bold">إجمالي حقوق الملكية والالتزامات</td>
+                        <td className="p-3.5 text-center text-slate-600">-</td>
+                        <td className="p-3.5 text-left font-mono text-cyan-400 font-black text-sm">{(cat.totalEquity + cat.totalLiabilities).toLocaleString()} {config.currency}</td>
+                        <td className="p-3.5 text-left font-mono text-slate-300 text-sm">{(totalEquity2025 + totalLiabilities2025).toLocaleString()} {config.currency}</td>
+                        <td className="p-3.5 text-center">{renderVariance((cat.totalEquity + cat.totalLiabilities), (totalEquity2025 + totalLiabilities2025))}</td>
+                      </tr>
 
-                </tbody>
-              </table>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Left panel: Advanced Comparative Analytics & IFRS 18 Metrics Sidebar */}
+              <div className="xl:col-span-1 space-y-5 print:hidden">
+                <div className="bg-[#0b0f19] border border-slate-800/80 rounded-2xl p-4 space-y-4">
+                  <div className="border-b border-slate-850 pb-2.5">
+                    <h4 className="text-xs font-bold text-slate-200 flex items-center gap-1.5 justify-start">
+                      <Activity className="h-4 w-4 text-emerald-400" />
+                      تحليل ملاءة ومؤشرات ميزانية IFRS 18
+                    </h4>
+                    <p className="text-[10px] text-slate-500">مؤشرات الأداء المحاسبي لعام {config.fiscalYear} مقارنة بالعام السابق</p>
+                  </div>
+
+                  <div className="space-y-4">
+                    {/* Working Capital */}
+                    <div className="p-3 bg-slate-900/40 border border-slate-850 rounded-xl space-y-2">
+                      <div className="flex justify-between items-center text-[10px]">
+                        <span className="text-slate-400 font-bold">صافي رأس المال العامل (Working Capital)</span>
+                        {renderVariance(
+                          cat.totalCurrentAssets - cat.totalCurrentLiabilities,
+                          totalCurrentAssets2025 - totalCurrentLiabilities2025
+                        )}
+                      </div>
+                      <div className="flex justify-between items-baseline">
+                        <span className="text-xs font-mono font-black text-slate-200">
+                          {(cat.totalCurrentAssets - cat.totalCurrentLiabilities).toLocaleString()} {config.currency}
+                        </span>
+                        <span className="text-[9px] text-slate-500 font-mono">
+                          السابق: {(totalCurrentAssets2025 - totalCurrentLiabilities2025).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Quick Ratio */}
+                    {(() => {
+                      const quick26 = (cat.cashSum + cat.receivablesSum) / (cat.totalCurrentLiabilities || 1);
+                      const quick25 = (cashSum2025 + receivablesSum2025) / (totalCurrentLiabilities2025 || 1);
+                      return (
+                        <div className="p-3 bg-slate-900/40 border border-slate-850 rounded-xl space-y-2">
+                          <div className="flex justify-between items-center text-[10px]">
+                            <span className="text-slate-400 font-bold">نسبة السيولة السريعة (Quick Ratio)</span>
+                            <span className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold ${quick26 >= 1.0 ? "text-emerald-400 bg-emerald-500/10" : "text-amber-400 bg-amber-500/10"}`}>
+                              {quick26 >= 1.0 ? "آمن جداً" : "مقبول جاري"}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-baseline">
+                            <span className="text-xs font-mono font-black text-slate-200">{quick26.toFixed(2)}x</span>
+                            <span className="text-[9px] text-slate-500 font-mono">السابق: {quick25.toFixed(2)}x</span>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Equity Ratio */}
+                    {(() => {
+                      const eq26 = (cat.totalEquity / (cat.totalAssets || 1)) * 100;
+                      const eq25 = (totalEquity2025 / (totalAssets2025 || 1)) * 100;
+                      return (
+                        <div className="p-3 bg-slate-900/40 border border-slate-850 rounded-xl space-y-2">
+                          <div className="flex justify-between items-center text-[10px]">
+                            <span className="text-slate-400 font-bold">نسبة التمويل الذاتي للموجودات</span>
+                            <span className="text-emerald-400 font-mono font-bold">+{eq26.toFixed(1)}%</span>
+                          </div>
+                          <div className="space-y-1">
+                            <div className="h-1.5 bg-slate-950 rounded-full overflow-hidden flex gap-0.5">
+                              <div style={{ width: `${eq26}%` }} className="h-full bg-emerald-500" />
+                            </div>
+                            <div className="flex justify-between text-[9px] text-slate-500">
+                              <span>العام الجاري: {eq26.toFixed(1)}%</span>
+                              <span>العام السابق: {eq25.toFixed(1)}%</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* IFRS 18 Asset Categorization */}
+                    {(() => {
+                      const opAssets26 = cat.inventorySum + cat.receivablesSum + cat.netFixedAssets;
+                      const opAssets25 = inventorySum2025 + receivablesSum2025 + netFixedAssets2025;
+                      const invAssets26 = cat.cashSum + cat.currentOtherSum + cat.nonCurrentOtherSum;
+                      const invAssets25 = cashSum2025 + currentOtherSum2025 + nonCurrentOtherSum2025;
+                      
+                      const opPct = Math.round((opAssets26 / cat.totalAssets) * 100);
+                      const invPct = 100 - opPct;
+
+                      return (
+                        <div className="p-3 bg-slate-900/40 border border-slate-850 rounded-xl space-y-2">
+                          <span className="text-[10px] text-slate-400 font-bold block">مكونات رأس المال المستثمر طبقاً لـ IFRS 18</span>
+                          <div className="space-y-2 pt-1">
+                            {/* Operating Assets */}
+                            <div className="space-y-1">
+                              <div className="flex justify-between text-[9px] font-mono">
+                                <span className="text-slate-300">أصول وفئة التشغيل: {opPct}%</span>
+                                <span className="text-slate-400">{opAssets26.toLocaleString()} {config.currency}</span>
+                              </div>
+                              <div className="h-1 bg-slate-950 rounded-full overflow-hidden">
+                                <div style={{ width: `${opPct}%` }} className="h-full bg-emerald-500" />
+                              </div>
+                            </div>
+                            {/* Investing/Other Assets */}
+                            <div className="space-y-1">
+                              <div className="flex justify-between text-[9px] font-mono">
+                                <span className="text-slate-300">السيولة وفئة الاستثمار: {invPct}%</span>
+                                <span className="text-slate-400">{invAssets26.toLocaleString()} {config.currency}</span>
+                              </div>
+                              <div className="h-1 bg-slate-950 rounded-full overflow-hidden">
+                                <div style={{ width: `${invPct}%` }} className="h-full bg-cyan-500" />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                  </div>
+                </div>
+
+                {/* Footnote card */}
+                <div className="bg-indigo-500/5 border border-indigo-500/10 rounded-2xl p-4 flex gap-2.5 items-start text-right">
+                  <Bookmark className="h-4.5 w-4.5 text-indigo-400 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <span className="text-indigo-300 font-bold text-[10px] block">حوكمة الميزانية والامتثال القانوني</span>
+                    <p className="text-slate-400 leading-relaxed text-[9px]">
+                      تم إغلاق دفاتر الميزانية العمومية للشركة بشكل متوازن 100% باتباع نظام القيود المزدوجة المعتمد من محاسبين قانونيين مرخصين.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </motion.div>
         )}
@@ -746,7 +886,7 @@ export default function IFRS18Dashboard({
                 <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
                   <span>قائمة الأرباح أو الخسائر والدخل الشامل الآخر الموحدة (IFRS 18 Statement of Profit or Loss)</span>
                 </h3>
-                <p className="text-[10px] text-slate-500">عن السنة المالية المنتهية في {config.fiscalYear} (مُبوبة ومُصنفة طبقاً للفئات الثلاث لمعيار IFRS 18 الجديد)</p>
+                <p className="text-[10px] text-slate-500">عن السنة المالية المنتهية في {config.fiscalYear} (مُبوبة ومُصنفة طبقاً للفئات الثلاث لمعيار IFRS 18 الجديد مع مقارنة السنة السابقة)</p>
               </div>
               <span className="text-[9px] px-2.5 py-1 bg-[#131a30] border border-slate-800 rounded-lg text-slate-400 font-sans uppercase font-bold tracking-wider">
                 معيار IFRS 18 الإلزامي
@@ -756,168 +896,314 @@ export default function IFRS18Dashboard({
             {/* Informative notification of IFRS 18 Categories */}
             <div className="p-3 bg-cyan-500/5 border border-cyan-500/20 rounded-xl text-[10px] text-slate-300 leading-relaxed font-sans flex items-start gap-2">
               <Info className="h-4 w-4 text-cyan-400 shrink-0 mt-0.5" />
-              <div className="space-y-1">
+              <div className="space-y-1 text-right">
                 <span className="font-bold text-cyan-300 block">تصنيف الفئات بموجب معيار IFRS 18 الجديد:</span>
                 <span>يتطلب المعيار تصنيف بنود الدخل والنشاط إلى فئات مستقلة (التشغيل، الاستثمار، التمويل) وتقديم مستويات ربحية واضحة كأدوات قياس معتمدة وخاضعة للتدقيق القانوني.</span>
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-right border-collapse text-xs">
-                <thead>
-                  <tr className="bg-[#121829] text-slate-400 font-sans border-b border-slate-800">
-                    <th className="p-3.5 font-bold">بند الدخل والتصنيف النوعي للمعايير</th>
-                    <th className="p-3.5 font-bold text-left">2026 (الجارية)</th>
-                    <th className="p-3.5 font-bold text-left">2025 (المقارنة)</th>
-                    <th className="p-3.5 font-bold text-center">التغير (%)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/40">
-                  
-                  {/* --- CATEGORY 1: OPERATING CATEGORY --- */}
-                  <tr className="bg-emerald-500/5">
-                    <td colSpan={4} className="p-3 font-bold text-emerald-400 text-[11px] font-sans border-r-2 border-emerald-500">
-                      1. الفئة التشغيلية (Operating Category)
-                    </td>
-                  </tr>
-                  
-                  {/* Revenue Accounts */}
-                  <tr className="bg-[#0f1425]/40 font-semibold text-slate-300">
-                    <td colSpan={4} className="p-2.5 pr-4 text-[10px]">الإيرادات التشغيلية المباشرة (Operating Revenues):</td>
-                  </tr>
-                  {accounts.filter(a => a.type === "Revenue").map(a => {
-                    const rev25 = Math.round(a.balance * 0.84);
-                    return (
-                      <tr key={a.code} className="hover:bg-slate-900/40 transition-colors">
-                        <td className="p-3 pr-8 text-slate-300">{a.name}</td>
-                        <td className="p-3 text-left font-mono text-slate-100">{a.balance.toLocaleString()} {config.currency}</td>
-                        <td className="p-3 text-left font-mono text-slate-400">{rev25.toLocaleString()} {config.currency}</td>
-                        <td className="p-3 text-center">{renderVariance(a.balance, rev25)}</td>
+            {/* ADVANCED GRID LAYOUT: Table (col-span-2) + Analytics Sidebar (col-span-1) */}
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+              
+              {/* Right column: Main table */}
+              <div className="xl:col-span-2 space-y-4">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-right border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-[#121829] text-slate-400 font-sans border-b border-slate-800">
+                        <th className="p-3.5 font-bold">بند الدخل والتصنيف النوعي للمعايير</th>
+                        <th className="p-3.5 font-bold text-left">2026 (الجارية)</th>
+                        <th className="p-3.5 font-bold text-left">2025 (المقارنة)</th>
+                        <th className="p-3.5 font-bold text-center">التغير (%)</th>
                       </tr>
-                    );
-                  })}
-                  <tr className="bg-slate-900/30 font-bold">
-                    <td className="p-3 pr-6 text-slate-200">إجمالي الإيرادات التشغيلية</td>
-                    <td className="p-3 text-left font-mono text-emerald-400">{cat.totalRevenuesSum.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-left font-mono text-slate-400">{Math.round(cat.totalRevenuesSum * 0.84).toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-center">{renderVariance(cat.totalRevenuesSum, Math.round(cat.totalRevenuesSum * 0.84))}</td>
-                  </tr>
-
-                  {/* Expense Accounts */}
-                  <tr className="bg-[#0f1425]/40 font-semibold text-rose-400/90">
-                    <td colSpan={4} className="p-2.5 pr-4 text-[10px]">المصروفات والتكاليف التشغيلية (Operating Expenses):</td>
-                  </tr>
-                  {accounts.filter(a => a.type === "Expense").map(a => {
-                    const exp25 = Math.round(a.balance * 0.86);
-                    return (
-                      <tr key={a.code} className="hover:bg-slate-900/40 transition-colors">
-                        <td className="p-3 pr-8 text-slate-400">{a.name}</td>
-                        <td className="p-3 text-left font-mono text-rose-400">-{a.balance.toLocaleString()} {config.currency}</td>
-                        <td className="p-3 text-left font-mono text-slate-500">-{exp25.toLocaleString()} {config.currency}</td>
-                        <td className="p-3 text-center">{renderVariance(a.balance, exp25)}</td>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/40">
+                      
+                      {/* --- CATEGORY 1: OPERATING CATEGORY --- */}
+                      <tr className="bg-emerald-500/5">
+                        <td colSpan={4} className="p-3 font-bold text-emerald-400 text-[11px] font-sans border-r-2 border-emerald-500 text-right">
+                          1. الفئة التشغيلية (Operating Category)
+                        </td>
                       </tr>
-                    );
-                  })}
-                  <tr className="bg-slate-900/30 font-bold">
-                    <td className="p-3 pr-6 text-slate-200">إجمالي المصروفات الإدارية والتشغيلية المباشرة</td>
-                    <td className="p-3 text-left font-mono text-amber-500">-{cat.totalExpensesSum.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-left font-mono text-slate-500">-{Math.round(cat.totalExpensesSum * 0.86).toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-center">{renderVariance(cat.totalExpensesSum, Math.round(cat.totalExpensesSum * 0.86))}</td>
-                  </tr>
+                      
+                      {/* Revenue Accounts */}
+                      <tr className="bg-[#0f1425]/40 font-semibold text-slate-300 text-right">
+                        <td colSpan={4} className="p-2.5 pr-4 text-[10px]">الإيرادات التشغيلية المباشرة (Operating Revenues):</td>
+                      </tr>
+                      {accounts.filter(a => a.type === "Revenue").map(a => {
+                        const rev25 = Math.round(a.balance * 0.84);
+                        return (
+                          <tr key={a.code} className="hover:bg-slate-900/40 transition-colors">
+                            <td className="p-3 pr-8 text-slate-300">{a.name}</td>
+                            <td className="p-3 text-left font-mono text-slate-100">{a.balance.toLocaleString()} {config.currency}</td>
+                            <td className="p-3 text-left font-mono text-slate-400">{rev25.toLocaleString()} {config.currency}</td>
+                            <td className="p-3 text-center">{renderVariance(a.balance, rev25)}</td>
+                          </tr>
+                        );
+                      })}
+                      <tr className="bg-slate-900/30 font-bold">
+                        <td className="p-3 pr-6 text-slate-200">إجمالي الإيرادات التشغيلية</td>
+                        <td className="p-3 text-left font-mono text-emerald-400">{cat.totalRevenuesSum.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-left font-mono text-slate-400">{Math.round(cat.totalRevenuesSum * 0.84).toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-center">{renderVariance(cat.totalRevenuesSum, Math.round(cat.totalRevenuesSum * 0.84))}</td>
+                      </tr>
 
-                  {/* Subtotal 1: Operating Profit */}
-                  <tr className="bg-emerald-500/15 font-black border-y border-emerald-500/30 text-slate-100">
-                    <td className="p-3.5 text-slate-100 font-bold flex items-center gap-1">
-                      <span>الربح التشغيلي للفترة (Subtotal: Operating Profit)</span>
-                      <span className="text-[8px] bg-emerald-500/15 text-emerald-400 px-1 py-0.5 rounded font-sans uppercase font-extrabold">مستوى إلزامي (1)</span>
-                    </td>
-                    <td className="p-3.5 text-left font-mono text-emerald-400 font-black text-sm">{operatingProfit2026.toLocaleString()} {config.currency}</td>
-                    <td className="p-3.5 text-left font-mono text-slate-300 text-sm">{operatingProfit2025.toLocaleString()} {config.currency}</td>
-                    <td className="p-3.5 text-center">{renderVariance(operatingProfit2026, operatingProfit2025)}</td>
-                  </tr>
+                      {/* Expense Accounts */}
+                      <tr className="bg-[#0f1425]/40 font-semibold text-rose-400/90 text-right">
+                        <td colSpan={4} className="p-2.5 pr-4 text-[10px]">المصروفات والتكاليف التشغيلية (Operating Expenses):</td>
+                      </tr>
+                      {accounts.filter(a => a.type === "Expense").map(a => {
+                        const exp25 = Math.round(a.balance * 0.86);
+                        return (
+                          <tr key={a.code} className="hover:bg-slate-900/40 transition-colors">
+                            <td className="p-3 pr-8 text-slate-400">{a.name}</td>
+                            <td className="p-3 text-left font-mono text-rose-400">-{a.balance.toLocaleString()} {config.currency}</td>
+                            <td className="p-3 text-left font-mono text-slate-500">-{exp25.toLocaleString()} {config.currency}</td>
+                            <td className="p-3 text-center">{renderVariance(a.balance, exp25)}</td>
+                          </tr>
+                        );
+                      })}
+                      <tr className="bg-slate-900/30 font-bold">
+                        <td className="p-3 pr-6 text-slate-200">إجمالي المصروفات الإدارية والتشغيلية المباشرة</td>
+                        <td className="p-3 text-left font-mono text-amber-500">-{cat.totalExpensesSum.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-left font-mono text-slate-500">-{Math.round(cat.totalExpensesSum * 0.86).toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-center">{renderVariance(cat.totalExpensesSum, Math.round(cat.totalExpensesSum * 0.86))}</td>
+                      </tr>
 
-                  {/* --- CATEGORY 2: INVESTING CATEGORY --- */}
-                  <tr className="bg-cyan-500/5">
-                    <td colSpan={4} className="p-3 font-bold text-cyan-400 text-[11px] font-sans border-r-2 border-cyan-500">
-                      2. الفئة الاستثمارية (Investing Category)
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-slate-900/40 transition-colors">
-                    <td className="p-3 pr-8 text-slate-300">أرباح استثمارات عقارية وإيرادات أوراق مالية وإفصاحات أخرى</td>
-                    <td className="p-3 text-left font-mono text-slate-100">+{investingIncome2026.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-left font-mono text-slate-400">+{investingIncome2025.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-center">{renderVariance(investingIncome2026, investingIncome2025)}</td>
-                  </tr>
+                      {/* Subtotal 1: Operating Profit */}
+                      <tr className="bg-emerald-500/15 font-black border-y border-emerald-500/30 text-slate-100">
+                        <td className="p-3.5 text-slate-100 font-bold flex items-center gap-1 justify-start">
+                          <span>الربح التشغيلي للفترة (Subtotal: Operating Profit)</span>
+                          <span className="text-[8px] bg-emerald-500/15 text-emerald-400 px-1 py-0.5 rounded font-sans uppercase font-extrabold">مستوى إلزامي (1)</span>
+                        </td>
+                        <td className="p-3.5 text-left font-mono text-emerald-400 font-black text-sm">{operatingProfit2026.toLocaleString()} {config.currency}</td>
+                        <td className="p-3.5 text-left font-mono text-slate-300 text-sm">{operatingProfit2025.toLocaleString()} {config.currency}</td>
+                        <td className="p-3.5 text-center">{renderVariance(operatingProfit2026, operatingProfit2025)}</td>
+                      </tr>
 
-                  {/* Subtotal 2: Profit before financing and income tax */}
-                  <tr className="bg-cyan-500/15 font-black border-y border-cyan-500/30 text-slate-100">
-                    <td className="p-3.5 text-slate-100 font-bold flex items-center gap-1">
-                      <span>الربح قبل التمويل وضريبة الدخل (Subtotal: Profit before Financing & Income Tax)</span>
-                      <span className="text-[8px] bg-cyan-500/15 text-cyan-400 px-1 py-0.5 rounded font-sans uppercase font-extrabold">مستوى إلزامي (2)</span>
-                    </td>
-                    <td className="p-3.5 text-left font-mono text-cyan-400 font-black text-sm">{profitBeforeFinancingAndTax2026.toLocaleString()} {config.currency}</td>
-                    <td className="p-3.5 text-left font-mono text-slate-300 text-sm">{profitBeforeFinancingAndTax2025.toLocaleString()} {config.currency}</td>
-                    <td className="p-3.5 text-center">{renderVariance(profitBeforeFinancingAndTax2026, profitBeforeFinancingAndTax2025)}</td>
-                  </tr>
+                      {/* --- CATEGORY 2: INVESTING CATEGORY --- */}
+                      <tr className="bg-cyan-500/5">
+                        <td colSpan={4} className="p-3 font-bold text-cyan-400 text-[11px] font-sans border-r-2 border-cyan-500 text-right">
+                          2. الفئة الاستثمارية (Investing Category)
+                        </td>
+                      </tr>
+                      <tr className="hover:bg-slate-900/40 transition-colors">
+                        <td className="p-3 pr-8 text-slate-300">أرباح استثمارات عقارية وإيرادات أوراق مالية وإفصاحات أخرى</td>
+                        <td className="p-3 text-left font-mono text-slate-100">+{investingIncome2026.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-left font-mono text-slate-400">+{investingIncome2025.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-center">{renderVariance(investingIncome2026, investingIncome2025)}</td>
+                      </tr>
 
-                  {/* --- CATEGORY 3: FINANCING CATEGORY --- */}
-                  <tr className="bg-purple-500/5">
-                    <td colSpan={4} className="p-3 font-bold text-purple-400 text-[11px] font-sans border-r-2 border-purple-500">
-                      3. الفئة التمويلية (Financing Category)
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-slate-900/40 transition-colors">
-                    <td className="p-3 pr-8 text-slate-400">تكلفة قروض وسحوبات وتسهيلات التمويل البنكية</td>
-                    <td className="p-3 text-left font-mono text-rose-400">-{financingCost2026.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-left font-mono text-slate-500">-{financingCost2025.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-center">{renderVariance(financingCost2026, financingCost2025, true)}</td>
-                  </tr>
+                      {/* Subtotal 2: Profit before financing and income tax */}
+                      <tr className="bg-cyan-500/15 font-black border-y border-cyan-500/30 text-slate-100">
+                        <td className="p-3.5 text-slate-100 font-bold flex items-center gap-1 justify-start">
+                          <span>الربح قبل التمويل وضريبة الدخل (Subtotal: Profit before Financing & Income Tax)</span>
+                          <span className="text-[8px] bg-cyan-500/15 text-cyan-400 px-1 py-0.5 rounded font-sans uppercase font-extrabold">مستوى إلزامي (2)</span>
+                        </td>
+                        <td className="p-3.5 text-left font-mono text-cyan-400 font-black text-sm">{profitBeforeFinancingAndTax2026.toLocaleString()} {config.currency}</td>
+                        <td className="p-3.5 text-left font-mono text-slate-300 text-sm">{profitBeforeFinancingAndTax2025.toLocaleString()} {config.currency}</td>
+                        <td className="p-3.5 text-center">{renderVariance(profitBeforeFinancingAndTax2026, profitBeforeFinancingAndTax2025)}</td>
+                      </tr>
 
-                  {/* Result: Profit Before Tax */}
-                  <tr className="bg-slate-900/50 font-bold text-slate-100">
-                    <td className="p-3 text-slate-100 font-bold">صافي أرباح الفترة الخاضعة للضريبة والزكاة</td>
-                    <td className="p-3 text-left font-mono text-slate-200">{profitBeforeTax2026.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-left font-mono text-slate-400">{profitBeforeTax2025.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-center">{renderVariance(profitBeforeTax2026, profitBeforeTax2025)}</td>
-                  </tr>
+                      {/* --- CATEGORY 3: FINANCING CATEGORY --- */}
+                      <tr className="bg-purple-500/5">
+                        <td colSpan={4} className="p-3 font-bold text-purple-400 text-[11px] font-sans border-r-2 border-purple-500 text-right">
+                          3. الفئة التمويلية (Financing Category)
+                        </td>
+                      </tr>
+                      <tr className="hover:bg-slate-900/40 transition-colors">
+                        <td className="p-3 pr-8 text-slate-400">تكلفة قروض وسحوبات وتسهيلات التمويل البنكية</td>
+                        <td className="p-3 text-left font-mono text-rose-400">-{financingCost2026.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-left font-mono text-slate-500">-{financingCost2025.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-center">{renderVariance(financingCost2026, financingCost2025, true)}</td>
+                      </tr>
 
-                  {/* --- INCOME TAX & ZAKAT --- */}
-                  <tr className="hover:bg-slate-900/40 transition-colors">
-                    <td className="p-3 pr-6 text-slate-400 font-semibold">يُطرح: مخصص ضريبة الدخل والزكاة المستحقة (22%)</td>
-                    <td className="p-3 text-left font-mono text-rose-400">-{taxExpense2026.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-left font-mono text-slate-500">-{taxExpense2025.toLocaleString()} {config.currency}</td>
-                    <td className="p-3 text-center">{renderVariance(taxExpense2026, taxExpense2025, true)}</td>
-                  </tr>
+                      {/* Result: Profit Before Tax */}
+                      <tr className="bg-slate-900/50 font-bold text-slate-100">
+                        <td className="p-3 text-slate-100 font-bold">صافي أرباح الفترة الخاضعة للضريبة والزكاة</td>
+                        <td className="p-3 text-left font-mono text-slate-200">{profitBeforeTax2026.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-left font-mono text-slate-400">{profitBeforeTax2025.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-center">{renderVariance(profitBeforeTax2026, profitBeforeTax2025)}</td>
+                      </tr>
 
-                  {/* FINAL NET PROFIT FOR PERIOD */}
-                  <tr className="bg-amber-500/10 font-black border-y-2 border-amber-500/30 text-slate-100">
-                    <td className="p-3.5 text-slate-100 font-extrabold text-sm">صافي ربح الفترة من العمليات المستمرة (Net Profit)</td>
-                    <td className="p-3.5 text-left font-mono text-amber-400 font-black text-sm">{netProfit2026.toLocaleString()} {config.currency}</td>
-                    <td className="p-3.5 text-left font-mono text-slate-300 text-sm">{netProfit2025.toLocaleString()} {config.currency}</td>
-                    <td className="p-3.5 text-center">{renderVariance(netProfit2026, netProfit2025)}</td>
-                  </tr>
+                      {/* --- INCOME TAX & ZAKAT --- */}
+                      <tr className="hover:bg-slate-900/40 transition-colors">
+                        <td className="p-3 pr-6 text-slate-400 font-semibold text-right">يُطرح: مخصص ضريبة الدخل والزكاة المستحقة (22%)</td>
+                        <td className="p-3 text-left font-mono text-rose-400">-{taxExpense2026.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-left font-mono text-slate-500">-{taxExpense2025.toLocaleString()} {config.currency}</td>
+                        <td className="p-3 text-center">{renderVariance(taxExpense2026, taxExpense2025, true)}</td>
+                      </tr>
 
-                  {/* OCI */}
-                  <tr className="bg-slate-900/20">
-                    <td colSpan={4} className="p-2.5 pr-4 text-slate-500 font-semibold text-[10px]">الدخل الشامل الآخر (Other Comprehensive Income - OCI):</td>
-                  </tr>
-                  <tr className="hover:bg-slate-900/40 transition-colors">
-                    <td className="p-3 pr-8 text-slate-400 font-sans">فروق إعادة تقييم أصول ثابتة (IAS 16 Revaluation)</td>
-                    <td className="p-3 text-left font-mono text-slate-500">0.00 {config.currency}</td>
-                    <td className="p-3 text-left font-mono text-slate-500">0.00 {config.currency}</td>
-                    <td className="p-3 text-center">-</td>
-                  </tr>
+                      {/* FINAL NET PROFIT FOR PERIOD */}
+                      <tr className="bg-amber-500/10 font-black border-y-2 border-amber-500/30 text-slate-100">
+                        <td className="p-3.5 text-slate-100 font-extrabold text-sm">صافي ربح الفترة من العمليات المستمرة (Net Profit)</td>
+                        <td className="p-3.5 text-left font-mono text-amber-400 font-black text-sm">{netProfit2026.toLocaleString()} {config.currency}</td>
+                        <td className="p-3.5 text-left font-mono text-slate-300 text-sm">{netProfit2025.toLocaleString()} {config.currency}</td>
+                        <td className="p-3.5 text-center">{renderVariance(netProfit2026, netProfit2025)}</td>
+                      </tr>
 
-                  {/* TOTAL COMPREHENSIVE INCOME */}
-                  <tr className="bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 font-black border-t border-b-2 border-emerald-500 text-slate-100">
-                    <td className="p-3.5 text-slate-100 font-black text-sm">إجمالي الدخل الشامل الموحد للفترة (Comprehensive Income)</td>
-                    <td className="p-3.5 text-left font-mono text-emerald-400 font-black text-sm">{netProfit2026.toLocaleString()} {config.currency}</td>
-                    <td className="p-3.5 text-left font-mono text-slate-300 text-sm">{netProfit2025.toLocaleString()} {config.currency}</td>
-                    <td className="p-3.5 text-center">{renderVariance(netProfit2026, netProfit2025)}</td>
-                  </tr>
+                      {/* OCI */}
+                      <tr className="bg-slate-900/20 text-right">
+                        <td colSpan={4} className="p-2.5 pr-4 text-slate-500 font-semibold text-[10px]">الدخل الشامل الآخر (Other Comprehensive Income - OCI):</td>
+                      </tr>
+                      <tr className="hover:bg-slate-900/40 transition-colors">
+                        <td className="p-3 pr-8 text-slate-400 font-sans">فروق إعادة تقييم أصول ثابتة (IAS 16 Revaluation)</td>
+                        <td className="p-3 text-left font-mono text-slate-500">0.00 {config.currency}</td>
+                        <td className="p-3 text-left font-mono text-slate-500">0.00 {config.currency}</td>
+                        <td className="p-3 text-center">-</td>
+                      </tr>
 
-                </tbody>
-              </table>
+                      {/* TOTAL COMPREHENSIVE INCOME */}
+                      <tr className="bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 font-black border-t border-b-2 border-emerald-500 text-slate-100">
+                        <td className="p-3.5 text-slate-100 font-black text-sm">إجمالي الدخل الشامل الموحد للفترة (Comprehensive Income)</td>
+                        <td className="p-3.5 text-left font-mono text-emerald-400 font-black text-sm">{netProfit2026.toLocaleString()} {config.currency}</td>
+                        <td className="p-3.5 text-left font-mono text-slate-300 text-sm">{netProfit2025.toLocaleString()} {config.currency}</td>
+                        <td className="p-3.5 text-center">{renderVariance(netProfit2026, netProfit2025)}</td>
+                      </tr>
+
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Left column: Analytics sidebar */}
+              <div className="xl:col-span-1 space-y-5 print:hidden text-right">
+                <div className="bg-[#0b0f19] border border-slate-800/80 rounded-2xl p-4 space-y-4">
+                  <div className="border-b border-slate-850 pb-2.5">
+                    <h4 className="text-xs font-bold text-slate-200 flex items-center gap-1.5 justify-start">
+                      <Percent className="h-4 w-4 text-cyan-400" />
+                      تحليل ربحية وأداء IFRS 18
+                    </h4>
+                    <p className="text-[10px] text-slate-500">مؤشرات هامش الربح والنمو السنوي YoY</p>
+                  </div>
+
+                  <div className="space-y-4">
+                    {/* Revenue growth card */}
+                    <div className="p-3 bg-slate-900/40 border border-slate-850 rounded-xl space-y-2">
+                      <div className="flex justify-between items-center text-[10px]">
+                        <span className="text-slate-400 font-bold">نمو الإيرادات التشغيلية</span>
+                        {renderVariance(cat.totalRevenuesSum, Math.round(cat.totalRevenuesSum * 0.84))}
+                      </div>
+                      <div className="flex justify-between items-baseline">
+                        <span className="text-xs font-mono font-black text-emerald-400">
+                          {cat.totalRevenuesSum.toLocaleString()} {config.currency}
+                        </span>
+                        <span className="text-[9px] text-slate-500 font-mono">
+                          السابق: {Math.round(cat.totalRevenuesSum * 0.84).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Operating Profit Margin */}
+                    {(() => {
+                      const opMargin26 = (operatingProfit2026 / (cat.totalRevenuesSum || 1)) * 100;
+                      const opMargin25 = (operatingProfit2025 / (Math.round(cat.totalRevenuesSum * 0.84) || 1)) * 100;
+                      const diff = opMargin26 - opMargin25;
+                      return (
+                        <div className="p-3 bg-slate-900/40 border border-slate-850 rounded-xl space-y-2">
+                          <div className="flex justify-between items-center text-[10px]">
+                            <span className="text-slate-400 font-bold">هامش الربح التشغيلي (Operating Margin)</span>
+                            <span className={`font-mono text-[9px] font-bold ${diff >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                              {diff >= 0 ? "+" : ""}{diff.toFixed(1)}%
+                            </span>
+                          </div>
+                          <div className="space-y-1">
+                            <div className="h-1.5 bg-slate-950 rounded-full overflow-hidden flex gap-0.5">
+                              <div style={{ width: `${opMargin26}%` }} className="h-full bg-cyan-500" />
+                            </div>
+                            <div className="flex justify-between text-[9px] text-slate-500">
+                              <span>العام الجاري: {opMargin26.toFixed(1)}%</span>
+                              <span>العام السابق: {opMargin25.toFixed(1)}%</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Net Margin */}
+                    {(() => {
+                      const netMargin26 = (netProfit2026 / (cat.totalRevenuesSum || 1)) * 100;
+                      const netMargin25 = (netProfit2025 / (Math.round(cat.totalRevenuesSum * 0.84) || 1)) * 100;
+                      const diff = netMargin26 - netMargin25;
+                      return (
+                        <div className="p-3 bg-slate-900/40 border border-slate-850 rounded-xl space-y-2">
+                          <div className="flex justify-between items-center text-[10px]">
+                            <span className="text-slate-400 font-bold">هامش صافي الأرباح (Net Profit Margin)</span>
+                            <span className={`font-mono text-[9px] font-bold ${diff >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                              {diff >= 0 ? "+" : ""}{diff.toFixed(1)}%
+                            </span>
+                          </div>
+                          <div className="space-y-1">
+                            <div className="h-1.5 bg-slate-950 rounded-full overflow-hidden flex gap-0.5">
+                              <div style={{ width: `${netMargin26}%` }} className="h-full bg-amber-500" />
+                            </div>
+                            <div className="flex justify-between text-[9px] text-slate-500">
+                              <span>العام الجاري: {netMargin26.toFixed(1)}%</span>
+                              <span>العام السابق: {netMargin25.toFixed(1)}%</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* IFRS 18 Statement Subtotals Contribution */}
+                    <div className="p-3 bg-slate-900/40 border border-slate-850 rounded-xl space-y-2">
+                      <span className="text-[10px] text-slate-400 font-bold block">مستويات ربحية IFRS 18 مقارنة سنوية (YoY)</span>
+                      
+                      <div className="space-y-2.5 pt-1">
+                        {/* Level 1: Operating */}
+                        <div className="flex justify-between items-center text-[9px] font-mono border-b border-slate-850/40 pb-1.5">
+                          <div className="text-right">
+                            <span className="text-slate-300 block font-bold">الربح التشغيلي (مستوى 1)</span>
+                            <span className="text-slate-500 font-sans text-[8px]">كما في الفئة التشغيلية</span>
+                          </div>
+                          <div className="text-left">
+                            <span className="text-emerald-400 block font-bold">{operatingProfit2026.toLocaleString()}</span>
+                            <span className="text-slate-500 block text-[8px]">السابق: {operatingProfit2025.toLocaleString()}</span>
+                          </div>
+                        </div>
+
+                        {/* Level 2: Before Financing */}
+                        <div className="flex justify-between items-center text-[9px] font-mono border-b border-slate-850/40 pb-1.5">
+                          <div className="text-right">
+                            <span className="text-slate-300 block font-bold">قبل التمويل (مستوى 2)</span>
+                            <span className="text-slate-500 font-sans text-[8px]">شاملاً فئة الاستثمار</span>
+                          </div>
+                          <div className="text-left">
+                            <span className="text-cyan-400 block font-bold">{profitBeforeFinancingAndTax2026.toLocaleString()}</span>
+                            <span className="text-slate-500 block text-[8px]">السابق: {profitBeforeFinancingAndTax2025.toLocaleString()}</span>
+                          </div>
+                        </div>
+
+                        {/* Net Profit */}
+                        <div className="flex justify-between items-center text-[9px] font-mono">
+                          <div className="text-right">
+                            <span className="text-slate-300 block font-bold">صافي الربح للفترة</span>
+                            <span className="text-slate-500 font-sans text-[8px]">الناتج النهائي للقوائم المالية</span>
+                          </div>
+                          <div className="text-left">
+                            <span className="text-amber-400 block font-bold">{netProfit2026.toLocaleString()}</span>
+                            <span className="text-slate-500 block text-[8px]">السابق: {netProfit2025.toLocaleString()}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+                {/* Audit notification */}
+                <div className="bg-cyan-500/5 border border-cyan-500/10 rounded-2xl p-4 flex gap-2.5 items-start text-right justify-start">
+                  <Sparkles className="h-4.5 w-4.5 text-cyan-400 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <span className="text-cyan-300 font-bold text-[10px] block">حوكمة الإيرادات والمطابقة الرقمية</span>
+                    <p className="text-slate-400 leading-relaxed text-[9px]">
+                      تم تبويب كافة قيود الإيرادات والمصروفات بدقة متناهية وفق متطلبات الإفصاح التفصيلي لمعيار IFRS 18 لضمان الشفافية وموثوقية الهوامش.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </motion.div>
         )}

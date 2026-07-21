@@ -217,7 +217,7 @@ export default function HRModule({
 
     setEmployees([...employees, newEmployee]);
     setSelectedEmp(newEmployee);
-    setNewEmpSuccessMsg(`تم تسجيل الموظف الجديد (${empName}) بنجاح وإدراجه في كشوف الرواتب والعمليات.`);
+    setNewEmpSuccessMsg(`تم تسجيل الموظف الجديد (${empName}) بنجاح وإدراجه في كشوف المرتبات والعمليات.`);
     
     // Save to server database
     fetch("/api/v1/hr/employees", {
@@ -591,7 +591,7 @@ export default function HRModule({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-5">
         <div>
           <span className="px-2 py-0.5 rounded text-[10px] bg-cyan-500/10 text-cyan-400 font-sans border border-cyan-500/30 font-bold">
-            نظام الموارد البشرية والرواتب (HR Suite) نشط
+            نظام الموارد البشرية والمرتبات (HR Suite) نشط
           </span>
           <h2 className="text-2xl font-display font-bold text-slate-100 mt-1">الموارد البشرية وشؤون الموظفين</h2>
           <p className="text-sm text-slate-400 mt-1 font-sans">
@@ -1431,7 +1431,7 @@ export default function HRModule({
 
               <div className="text-[10px] text-slate-400 leading-relaxed bg-slate-950 p-2.5 rounded-lg border border-slate-800">
                 <strong className="text-slate-300 block mb-0.5">القرض والخصم الآلي:</strong>
-                تُعتبر السلفة قرضاً حسناً بدون أية فوائد ربوية، على أن يتم ترحيل الخصم تدريجياً وشهرياً من صافي كشف مرتب الموظف عند صرف الرواتب.
+                تُعتبر السلفة قرضاً حسناً بدون أية فوائد ربوية، على أن يتم ترحيل الخصم تدريجياً وشهرياً من صافي كشف مرتب الموظف عند صرف المرتبات.
               </div>
 
               <button
