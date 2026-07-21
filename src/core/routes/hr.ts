@@ -24,7 +24,7 @@ const router = Router();
 // Get employees list
 router.get("/employees", requireScope("accounting:read"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const db = await getDbForTenant(tenantId);
     const list = await db.select().from(employees).where(eq(employees.tenantId, tenantId));
     res.json({ success: true, data: list });
@@ -36,7 +36,7 @@ router.get("/employees", requireScope("accounting:read"), async (req: Request, r
 // Add new employee
 router.post("/employees", requireScope("accounting:write"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const db = await getDbForTenant(tenantId);
     const emp = req.body;
 
@@ -96,7 +96,7 @@ router.post("/employees", requireScope("accounting:write"), async (req: Request,
 // Get attendance records
 router.get("/attendance", requireScope("accounting:read"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const db = await getDbForTenant(tenantId);
     const list = await db.select().from(attendanceRecords).where(eq(attendanceRecords.tenantId, tenantId));
     res.json({ success: true, data: list });
@@ -108,7 +108,7 @@ router.get("/attendance", requireScope("accounting:read"), async (req: Request, 
 // Add attendance record
 router.post("/attendance", requireScope("accounting:write"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const db = await getDbForTenant(tenantId);
     const { id, employeeId, employeeName, date, checkIn, checkOut, status } = req.body;
 
@@ -145,7 +145,7 @@ router.post("/attendance", requireScope("accounting:write"), async (req: Request
 // Get leave requests
 router.get("/leaves", requireScope("accounting:read"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const db = await getDbForTenant(tenantId);
     const list = await db.select().from(leaveRequests).where(eq(leaveRequests.tenantId, tenantId));
     res.json({ success: true, data: list });
@@ -157,7 +157,7 @@ router.get("/leaves", requireScope("accounting:read"), async (req: Request, res:
 // Add leave request
 router.post("/leaves", requireScope("accounting:write"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const db = await getDbForTenant(tenantId);
     const { id, employeeId, employeeName, type, duration, status, reason } = req.body;
 
@@ -190,7 +190,7 @@ router.post("/leaves", requireScope("accounting:write"), async (req: Request, re
 // Approve/Reject leave request
 router.put("/leaves/:id", requireScope("accounting:write"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const db = await getDbForTenant(tenantId);
     const { status } = req.body;
 
@@ -220,7 +220,7 @@ router.put("/leaves/:id", requireScope("accounting:write"), async (req: Request,
 // Get loans
 router.get("/loans", requireScope("accounting:read"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const db = await getDbForTenant(tenantId);
     const list = await db.select().from(employeeLoans).where(eq(employeeLoans.tenantId, tenantId));
     res.json({ success: true, data: list });
@@ -232,7 +232,7 @@ router.get("/loans", requireScope("accounting:read"), async (req: Request, res: 
 // Add loan
 router.post("/loans", requireScope("accounting:write"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const db = await getDbForTenant(tenantId);
     const { id, employeeId, employeeName, amount, installmentMonthly } = req.body;
 
@@ -269,7 +269,7 @@ router.post("/loans", requireScope("accounting:write"), async (req: Request, res
 // Get candidates
 router.get("/candidates", requireScope("accounting:read"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const db = await getDbForTenant(tenantId);
     const list = await db.select().from(jobCandidates).where(eq(jobCandidates.tenantId, tenantId));
     res.json({ success: true, data: list });
@@ -281,7 +281,7 @@ router.get("/candidates", requireScope("accounting:read"), async (req: Request, 
 // Add candidate
 router.post("/candidates", requireScope("accounting:write"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const db = await getDbForTenant(tenantId);
     const { id, name, position, stage, score, expectedSalary, department } = req.body;
 
@@ -314,7 +314,7 @@ router.post("/candidates", requireScope("accounting:write"), async (req: Request
 // Update candidate stage
 router.put("/candidates/:id", requireScope("accounting:write"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const db = await getDbForTenant(tenantId);
     const { stage } = req.body;
 
@@ -344,7 +344,7 @@ router.put("/candidates/:id", requireScope("accounting:write"), async (req: Requ
 // Get appraisals
 router.get("/appraisals", requireScope("accounting:read"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const db = await getDbForTenant(tenantId);
     const list = await db.select().from(performanceAppraisals).where(eq(performanceAppraisals.tenantId, tenantId));
     res.json({ success: true, data: list });
@@ -356,7 +356,7 @@ router.get("/appraisals", requireScope("accounting:read"), async (req: Request, 
 // Add appraisal
 router.post("/appraisals", requireScope("accounting:write"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const db = await getDbForTenant(tenantId);
     const { id, employeeId, employeeName, rating, comments } = req.body;
 
@@ -391,7 +391,7 @@ router.post("/appraisals", requireScope("accounting:write"), async (req: Request
 // Get payslips
 router.get("/payslips", requireScope("accounting:read"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const db = await getDbForTenant(tenantId);
     const list = await db.select().from(payslips).where(eq(payslips.tenantId, tenantId));
     res.json({ success: true, data: list });
@@ -403,7 +403,7 @@ router.get("/payslips", requireScope("accounting:read"), async (req: Request, re
 // Process/Pay salary (Deduction, Tax, Social Insurances, Net salary & double-entry Journal Posting)
 router.post("/payslips", requireScope("accounting:write"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const db = await getDbForTenant(tenantId);
     
     const { 

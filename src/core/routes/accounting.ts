@@ -8,7 +8,7 @@ const router = Router();
 // 1. Get Journal Entries
 router.get("/journal-entries", requireScope("accounting:read"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const entries = await AccountingRepository.getJournalEntries(tenantId);
     res.json({ success: true, data: entries });
   } catch (error: any) {
@@ -19,7 +19,7 @@ router.get("/journal-entries", requireScope("accounting:read"), async (req: Requ
 // 2. Post Journal Entry (with Double-Entry balance check)
 router.post("/journal-entries", requireScope("accounting:post"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const entry: JournalEntry = req.body;
 
     // Validate double-entry balance
@@ -43,7 +43,7 @@ router.post("/journal-entries", requireScope("accounting:post"), async (req: Req
 
 // 3. Update Journal Entry with Optimistic Locking
 router.put("/journal-entries/:id", requireScope("accounting:write"), async (req: Request, res: Response) => {
-  const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+  const tenantId = (req as any).user!.tenantId;
   const entry = req.body;
   entry.id = req.params.id;
 
@@ -80,7 +80,7 @@ router.put("/journal-entries/:id", requireScope("accounting:write"), async (req:
 // 4. Get Cheques
 router.get("/cheques", requireScope("accounting:read"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const chequesList = await AccountingRepository.getCheques(tenantId);
     res.json({ success: true, data: chequesList });
   } catch (error: any) {
@@ -90,7 +90,7 @@ router.get("/cheques", requireScope("accounting:read"), async (req: Request, res
 
 // 5. Update Cheque with Optimistic Locking
 router.put("/cheques/:id", requireScope("accounting:write"), async (req: Request, res: Response) => {
-  const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+  const tenantId = (req as any).user!.tenantId;
   const cheque = req.body;
   cheque.id = req.params.id;
 
@@ -124,7 +124,7 @@ router.put("/cheques/:id", requireScope("accounting:write"), async (req: Request
 // GET all cash flow mappings
 router.get("/cash-flow-mappings", requireScope("accounting:read"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const mappings = await AccountingRepository.getCashFlowMappings(tenantId);
     res.json({ success: true, data: mappings });
   } catch (error: any) {
@@ -135,7 +135,7 @@ router.get("/cash-flow-mappings", requireScope("accounting:read"), async (req: R
 // POST (upsert) a cash flow mapping
 router.post("/cash-flow-mappings", requireScope("accounting:write"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const mapping = req.body; // { accountCode, activityType, categoryName }
     if (!mapping.accountCode || !mapping.activityType || !mapping.categoryName) {
       return res.status(400).json({ success: false, error: "بيانات التوزيع غير مكتملة" });
@@ -154,7 +154,7 @@ router.post("/cash-flow-mappings", requireScope("accounting:write"), async (req:
 // GET Statement of Cash Flows (IAS 7) - Direct & Indirect Methods
 router.get("/reports/cash-flows", requireScope("accounting:read"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     
     // 1. Fetch live data
     const accounts = await AccountingRepository.getAccounts(tenantId);
@@ -352,7 +352,7 @@ router.get("/reports/cash-flows", requireScope("accounting:read"), async (req: R
 // GET Statement of Changes in Equity (IAS 1)
 router.get("/reports/changes-in-equity", requireScope("accounting:read"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     
     // Fetch accounts and journal entries
     const accounts = await AccountingRepository.getAccounts(tenantId);

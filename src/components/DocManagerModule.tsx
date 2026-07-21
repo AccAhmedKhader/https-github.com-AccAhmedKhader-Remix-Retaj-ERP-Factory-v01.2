@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { ERPConfig } from "../types";
 import { getThemeClass } from "./Sidebar";
+import DOMPurify from "dompurify";
 
 interface DocManagerModuleProps {
   config: ERPConfig;
@@ -144,7 +145,7 @@ export default function DocManagerModule({ config }: DocManagerModuleProps) {
   const [dragActive, setDragActive] = useState(false);
 
   // --- START OF ENTERPRISE SEARCH & DISCOVERY STATES ---
-  const [activeTab, setActiveTab] = useState<"explorer" | "intelligent-search">("explorer");
+  const [activeTab, setActiveTab] = useState<"explorer" | "intelligent-search" | "compliance-hub">("explorer");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchIsSemantic, setSearchIsSemantic] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -357,7 +358,7 @@ export default function DocManagerModule({ config }: DocManagerModuleProps) {
           { id: "fold-legal", name: "عقود وتوكيلات قانونية", description: "عقود المبيعات والتوكيلات الرسمية والاتفاقيات الدولية", iconType: "legal" },
           { id: "fold-finance", name: "فواتير ومطالبات مالية", description: "فواتير المبيعات والشراء ومستندات المطالبات البنكية", iconType: "finance" },
           { id: "fold-taxes", name: "ملفات وإقرارات ضريبية", description: "إقرارات القيمة المضافة وضريبة كسب العمل والنموذج 41", iconType: "tax" },
-          { id: "fold-hr", name: "مسيرات رواتب وموارد بشرية", description: "مسيرات الأجور والرواتب الشهرية والبدلات وعقود التوظيف", iconType: "hr" },
+          { id: "fold-hr", name: "مرتبات وموارد بشرية", description: "الأجور والمرتبات الشهرية والبدلات وعقود التوظيف", iconType: "hr" },
           { id: "fold-general", name: "سجلات عامة ووثائق تأسيس", description: "السجل التجاري، البطاقة الضريبية، والشهادات الرسمية للمنشأة", iconType: "general" }
         ];
 
@@ -818,7 +819,7 @@ export default function DocManagerModule({ config }: DocManagerModuleProps) {
       case "Invoice": return "فواتير ومطالبات مالية";
       case "Contract": return "عقود وتوكيلات اتفاقيات";
       case "Tax": return "ملفات ضريبية ونماذج قانونية";
-      case "Payroll": return "مسيرات رواتب وأجور موظفين";
+      case "Payroll": return "كشوف مرتبات وأجور موظفين";
       default: return "ملفات عامة ووثائق تأسيس";
     }
   };
@@ -997,6 +998,16 @@ export default function DocManagerModule({ config }: DocManagerModuleProps) {
         >
           <Sparkles className="h-4 w-4" /> منصة البحث والتحري الذكي (Enterprise Discovery)
         </button>
+        <button
+          onClick={() => setActiveTab("compliance-hub")}
+          className={`px-4 py-2.5 text-xs font-bold transition-all border-b-2 flex items-center gap-2 cursor-pointer ${
+            activeTab === "compliance-hub"
+              ? "border-indigo-500 text-indigo-400"
+              : "border-transparent text-slate-400 hover:text-slate-200"
+          }`}
+        >
+          <History className="h-4 w-4" /> منصة الحوكمة والامتثال ومراجعة الأرشفة
+        </button>
       </div>
 
       {activeTab === "explorer" ? (
@@ -1098,7 +1109,7 @@ export default function DocManagerModule({ config }: DocManagerModuleProps) {
                   <option value="Invoice">فواتير ومستندات بيع</option>
                   <option value="Contract">عقود واتفاقيات</option>
                   <option value="Tax">ملفات ضريبية وقانونية</option>
-                  <option value="Payroll">مسيرات رواتب وأجور</option>
+                  <option value="Payroll">مرتبات وأجور</option>
                   <option value="General">أوراق عامة وتأسيس</option>
                 </select>
 
@@ -1744,7 +1755,15 @@ export default function DocManagerModule({ config }: DocManagerModuleProps) {
                         {res.snippet && (
                           <div className="bg-slate-950 p-2.5 rounded border border-slate-850 text-[10px] text-slate-400 leading-relaxed font-sans mt-1">
                             <span className="text-[8px] font-bold text-indigo-400 block mb-1">تطابق النص المستخلص (OCR Highlight):</span>
-                            <p className="line-clamp-2" dangerouslySetInnerHTML={{ __html: res.snippet.replace(searchQuery, `<strong class="text-indigo-300 font-bold underline bg-indigo-500/10 px-1 py-0.5 rounded">${searchQuery}</strong>`) }} />
+                            <p className="line-clamp-2" dangerouslySetInnerHTML={{
+                              __html: (() => {
+                                if (!searchQuery) return DOMPurify.sanitize(res.snippet);
+                                const escapedQuery = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                                const regex = new RegExp(`(${escapedQuery})`, "gi");
+                                const highlighted = res.snippet.replace(regex, `<strong class="text-indigo-300 font-bold underline bg-indigo-500/10 px-1 py-0.5 rounded">$1</strong>`);
+                                return DOMPurify.sanitize(highlighted);
+                              })()
+                            }} />
                           </div>
                         )}
 
@@ -1874,6 +1893,184 @@ export default function DocManagerModule({ config }: DocManagerModuleProps) {
             </div>
           </div>
 
+        </div>
+      )}
+
+      {activeTab === "compliance-hub" && (
+        <div className="space-y-6 animate-fadeIn">
+          {/* Summary Audit Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-right" dir="rtl">
+            <div className="bg-[#0b0f19] border border-slate-800 rounded-xl p-4 space-y-1">
+              <span className="text-[10px] text-slate-500 block font-bold font-sans">إجمالي المستندات المحمية</span>
+              <strong className="text-xl font-mono text-indigo-400 block">{documents.length} وثيقة</strong>
+              <span className="text-[9px] text-emerald-400 block font-sans">✓ تخزين ممركز مشفر ومؤمن</span>
+            </div>
+
+            <div className="bg-[#0b0f19] border border-slate-800 rounded-xl p-4 space-y-1">
+              <span className="text-[10px] text-slate-500 block font-bold font-sans">المستندات المختومة رقمياً</span>
+              <strong className="text-xl font-mono text-emerald-400 block">
+                {documents.filter(d => d.signatureStatus === "Signed").length} وثيقة
+              </strong>
+              <span className="text-[9px] text-slate-500 block font-sans">بصمة مشفرة SHA-256 معتمدة</span>
+            </div>
+
+            <div className="bg-[#0b0f19] border border-slate-800 rounded-xl p-4 space-y-1">
+              <span className="text-[10px] text-slate-500 block font-bold font-sans">ملفات خاضعة للتحفظ القانوني (Hold)</span>
+              <strong className="text-xl font-mono text-amber-500 block">
+                {documents.filter(d => d.isLegalHold).length} وثيقة
+              </strong>
+              <span className="text-[9px] text-slate-500 block font-sans">ممنوع الحذف مؤقتاً لأغراض التدقيق</span>
+            </div>
+
+            <div className="bg-[#0b0f19] border border-slate-800 rounded-xl p-4 space-y-1">
+              <span className="text-[10px] text-slate-500 block font-bold font-sans">ملفات ذات سرية فائقة</span>
+              <strong className="text-xl font-mono text-rose-400 block">
+                {documents.filter(d => d.securityLevel === "Confidential" || d.securityLevel === "Highly Confidential").length} وثيقة
+              </strong>
+              <span className="text-[9px] text-slate-500 block font-sans">مشفرة تحت بروتوكولات حماية RBAC</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 text-right" dir="rtl">
+            {/* Columns 1 & 2: Signature Gaps and Document Actions */}
+            <div className="lg:col-span-2 bg-[#0b0f19] border border-slate-800 rounded-2xl p-5 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-850 pb-3">
+                <div className="space-y-0.5">
+                  <h4 className="text-xs font-bold text-slate-200 flex items-center gap-1.5 justify-start font-sans">
+                    <FileSignature className="h-4.5 w-4.5 text-indigo-400" />
+                    مراجعة التوقيعات الرقمية المعلقة والتأمين الفوري (Signature Gap Auditor)
+                  </h4>
+                  <p className="text-[10px] text-slate-500 font-sans">كشف وتوقيع المستندات الهامة المعلقة لضمان سلامتها وصحتها القانونية</p>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-right border-collapse text-xs">
+                  <thead>
+                    <tr className="text-slate-400 border-b border-slate-850 font-sans">
+                      <th className="p-3 text-right">اسم المستند</th>
+                      <th className="p-3">الفئة والنوع</th>
+                      <th className="p-3 text-center">حالة الختم</th>
+                      <th className="p-3 text-left">إجراءات الحوكمة السريعة</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-850/40 font-sans">
+                    {documents.filter(d => d.signatureStatus !== "Signed").map(doc => (
+                      <tr key={doc.id} className="hover:bg-slate-900/40">
+                        <td className="p-3 font-semibold text-slate-300">
+                          <div className="flex items-center gap-2 justify-start">
+                            <FileText className="h-4 w-4 text-indigo-400 shrink-0" />
+                            <span>{doc.name}</span>
+                          </div>
+                        </td>
+                        <td className="p-3 text-slate-400">{getCategoryLabel(doc.category)}</td>
+                        <td className="p-3 text-center">
+                          <span className="px-2 py-0.5 rounded text-[9px] bg-amber-500/10 border border-amber-500/20 text-amber-400 font-bold font-sans">
+                            {doc.signatureStatus === "Unsigned" ? "غير موقع" : "موقع جزئياً"}
+                          </span>
+                        </td>
+                        <td className="p-3 text-left">
+                          <div className="flex items-center gap-2 justify-end">
+                            <button
+                              onClick={() => {
+                                setActiveDoc(doc);
+                                setIsSignatureModalOpen(true);
+                              }}
+                              className="px-2 py-1 bg-indigo-500/15 hover:bg-indigo-500 hover:text-slate-950 text-indigo-400 rounded text-[10px] font-bold transition-all cursor-pointer border border-indigo-500/20 font-sans"
+                            >
+                              إضافة ختم رقمي مشفر
+                            </button>
+                            <button
+                              onClick={async () => {
+                                // Toggle Legal hold
+                                const updated = documents.map(d => {
+                                  if (d.id === doc.id) {
+                                    const nextHold = !d.isLegalHold;
+                                    const actionText = nextHold ? "تفعيل الحظر القانوني" : "إلغاء الحظر القانوني";
+                                    const newLog: AuditLog = {
+                                      action: "HOLD_TOGGLE",
+                                      timestamp: new Date().toISOString().replace("T", " ").slice(0, 19),
+                                      user: "المدير العام",
+                                      details: `${actionText} للمستند ${d.name}`
+                                    };
+                                    return {
+                                      ...d,
+                                      isLegalHold: nextHold,
+                                      auditLogs: [newLog, ...(d.auditLogs || [])]
+                                    };
+                                  }
+                                  return d;
+                                });
+                                setDocuments(updated);
+                                setSuccessMessage("تم تحديث حالة التحفظ القانوني للمستند بنجاح.");
+                              }}
+                              className={`px-2 py-1 rounded text-[10px] font-bold transition-all cursor-pointer border font-sans ${
+                                doc.isLegalHold 
+                                  ? "bg-rose-500/10 border-rose-500/20 text-rose-400 hover:bg-rose-500/20" 
+                                  : "bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200"
+                              }`}
+                            >
+                              {doc.isLegalHold ? "إلغاء الحظر" : "حظر الحذف"}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {documents.filter(d => d.signatureStatus !== "Signed").length === 0 && (
+                      <tr>
+                        <td colSpan={4} className="p-8 text-center text-slate-500 font-sans">
+                          جميع المستندات الهامة مختومة وموقعة بالكامل رقمياً ولا توجد ثغرات ختم 🟢
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Column 3: Audit Trail Timeline */}
+            <div className="bg-[#0b0f19] border border-slate-800 rounded-2xl p-5 space-y-4">
+              <div className="border-b border-slate-850 pb-3">
+                <h4 className="text-xs font-bold text-slate-200 flex items-center gap-1.5 justify-start font-sans">
+                  <History className="h-4.5 w-4.5 text-cyan-400" />
+                  سجل عمليات الوصول التاريخية ومراقبة النزاهة
+                </h4>
+                <p className="text-[10px] text-slate-500 font-sans">مراقبة حية فورية ومسجلة لكافة تعديلات الأرشيف والوصول الآمن للملفات</p>
+              </div>
+
+              <div className="space-y-3.5 max-h-[350px] overflow-y-auto pr-1">
+                {(() => {
+                  const allLogs = documents.flatMap(doc => 
+                    (doc.auditLogs || []).map(log => ({
+                      ...log,
+                      docName: doc.name,
+                      docId: doc.id
+                    }))
+                  ).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+                  if (allLogs.length === 0) {
+                    return <p className="text-center py-6 text-[11px] text-slate-500 font-sans">لا توجد سجلات وصول محاسبية حتى الآن.</p>;
+                  }
+
+                  return allLogs.slice(0, 15).map((log, index) => (
+                    <div key={index} className="bg-slate-900/40 p-3 rounded-xl border border-slate-850/80 space-y-1 hover:border-slate-800 transition-colors font-sans text-right" dir="rtl">
+                      <div className="flex items-center justify-between text-[9px]">
+                        <span className="text-indigo-400 font-bold">{log.user}</span>
+                        <span className="text-slate-500 font-mono">{log.timestamp}</span>
+                      </div>
+                      <div className="text-[10px] text-slate-300">
+                        <span className="font-semibold text-slate-400">الإجراء:</span> {log.details}
+                      </div>
+                      <div className="text-[9px] text-slate-500 flex items-center gap-1 justify-start">
+                        <FileText className="h-3 w-3 text-indigo-400" />
+                        <span>مستند: {log.docName}</span>
+                      </div>
+                    </div>
+                  ));
+                })()}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -2031,7 +2228,7 @@ export default function DocManagerModule({ config }: DocManagerModuleProps) {
                     <option value="Invoice">فواتير ومطالبات مالية</option>
                     <option value="Contract">عقود واتفاقيات</option>
                     <option value="Tax">ملفات ضريبية ونماذج قانونية</option>
-                    <option value="Payroll">مسيرات رواتب وأجور</option>
+                    <option value="Payroll">مرتبات وأجور</option>
                   </select>
                 </div>
                 <div>
@@ -2126,7 +2323,7 @@ export default function DocManagerModule({ config }: DocManagerModuleProps) {
                   <option value="legal">عقود واتفاقيات قانونية</option>
                   <option value="finance">فواتير ومطالبات مالية</option>
                   <option value="tax">ملفات ضريبية مخصصة</option>
-                  <option value="hr">مسيرات موارد بشرية</option>
+                  <option value="hr">مرتبات وموارد بشرية</option>
                 </select>
               </div>
 

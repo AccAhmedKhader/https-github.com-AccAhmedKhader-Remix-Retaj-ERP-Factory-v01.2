@@ -9,7 +9,7 @@ const router = Router();
 // 1. Get Cost Centers
 router.get("/cost-centers", requireScope("accounting:read"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const db = await getDbForTenant(tenantId);
     const list = await db.select().from(costCentersTable).where(eq(costCentersTable.tenantId, tenantId));
     res.json({ success: true, data: list });
@@ -21,7 +21,7 @@ router.get("/cost-centers", requireScope("accounting:read"), async (req: Request
 // 2. Get Profit Centers
 router.get("/profit-centers", requireScope("accounting:read"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const db = await getDbForTenant(tenantId);
     const list = await db.select().from(profitCentersTable).where(eq(profitCentersTable.tenantId, tenantId));
     res.json({ success: true, data: list });

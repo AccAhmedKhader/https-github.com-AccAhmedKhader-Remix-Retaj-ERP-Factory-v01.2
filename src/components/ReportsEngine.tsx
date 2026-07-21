@@ -51,6 +51,7 @@ import {
   ERPConfig,
   Cheque
 } from "../types";
+import IFRS18Dashboard from "./IFRS18Dashboard";
 
 interface ReportsEngineProps {
   accounts: ChartOfAccount[];
@@ -504,7 +505,7 @@ export default function ReportsEngine({
           };
         });
       } else if (domain === "hr") {
-        sheetName = "مسير الرواتب والموظفين";
+        sheetName = "كشف المرتبات والموظفين";
         dataToExport = filteredEmployees.map(emp => ({
           "كود الموظف": emp.id,
           "الاسم": emp.name,
@@ -811,7 +812,7 @@ export default function ReportsEngine({
           </div>
           <h2 className="text-2xl font-display font-bold text-slate-100 mt-1">محرك التقارير الاستقصائي الشامل الذكي</h2>
           <p className="text-sm text-slate-400 mt-1 font-sans">
-            تقارير تفصيلية فورية تدمج الأستاذ العام، المستودعات المتعددة، المشتريات والمبيعات، مسير رواتب الموظفين والإنتاج مع تصدير مباشر.
+            تقارير تفصيلية فورية تدمج الأستاذ العام، المستودعات المتعددة، المشتريات والمبيعات، مرتبات الموظفين والإنتاج مع تصدير مباشر.
           </p>
         </div>
 
@@ -900,8 +901,8 @@ export default function ReportsEngine({
         >
           <Users className={`h-5 w-5 ${domain === "hr" ? "text-amber-400" : "text-slate-400"}`} />
           <div>
-            <h4 className="font-bold text-xs font-display">الموارد البشرية والرواتب</h4>
-            <p className="text-[9px] text-slate-500 font-sans mt-0.5">مسير الرواتب والضرائب والخصم</p>
+            <h4 className="font-bold text-xs font-display">الموارد البشرية والمرتبات</h4>
+            <p className="text-[9px] text-slate-500 font-sans mt-0.5">المرتبات والضرائب والخصم</p>
           </div>
         </button>
 
@@ -1191,7 +1192,7 @@ export default function ReportsEngine({
               <div className="text-[9px] text-slate-500 font-sans">إدارات البحث والتطوير والمالية والعمليات</div>
             </div>
             <div className="bg-[#0f1425] border border-slate-800/80 rounded-xl p-4.5 text-right space-y-1 shadow-md">
-              <span className="text-[10px] text-slate-500 block font-sans">صافي مسير الرواتب الشهري المعتمد</span>
+              <span className="text-[10px] text-slate-500 block font-sans">صافي كشف المرتبات الشهري المعتمد</span>
               <strong className="text-xl font-mono text-slate-200">{totalPayrollCost.toLocaleString()} {config.currency}</strong>
               <div className="text-[9px] text-slate-500 font-sans">مخصوم منها الضرائب وخصومات الغياب</div>
             </div>
@@ -1330,7 +1331,7 @@ export default function ReportsEngine({
               )}
               {domain === "inventory" && "بيان جرد ومستويات مخزون المستودعات"}
               {domain === "invoices" && "بيان حركة فواتير العملاء والموردين"}
-              {domain === "hr" && "بيان كادر التوظيف التفصيلي ومسير الرواتب"}
+              {domain === "hr" && "بيان كادر التوظيف التفصيلي والمرتبات"}
               {domain === "mrp" && "بيان كشف أوامر تشغيل خطوط التصنيع"}
               {domain === "partners" && "بيان كشف حركة الشيكات وأرصدة الشركاء"}
               {domain === "kpis" && "تقرير الأداء والتحليل المالي الاستراتيجي"}
@@ -1355,7 +1356,7 @@ export default function ReportsEngine({
               )}
               {domain === "inventory" && `بيان جرد ومستويات مخزون المستودعات المصنف - ${config.company}`}
               {domain === "invoices" && `بيان حركة فواتير العملاء والموردين وضرائب نموذج 41 - ${config.company}`}
-              {domain === "hr" && `بيان كادر التوظيف التفصيلي ومسير الرواتب المعتمد - ${config.company}`}
+              {domain === "hr" && `بيان كادر التوظيف التفصيلي والمرتبات المعتمدة - ${config.company}`}
               {domain === "mrp" && `بيان كشف أوامر تشغيل وخطوط التصنيع - ${config.company}`}
               {domain === "partners" && `بيان كشف حركة الشيكات وأرصدة كبار العملاء والموردين - ${config.company}`}
               {domain === "kpis" && `تقرير لوحة مؤشرات الأداء والتحليل المالي الاستراتيجي - ${config.company}`}
@@ -1428,6 +1429,20 @@ export default function ReportsEngine({
           
           {/* DOMAIN 1: IFRS INTEGRATED financial statements suite */}
           {domain === "finance" && financeSubTab === "ifrs" && (
+            <div className="p-6 space-y-8 text-right font-sans" id="ifrs-unified-container">
+              <IFRS18Dashboard 
+                accounts={accounts} 
+                stock={stock} 
+                customers={customers} 
+                suppliers={suppliers} 
+                config={config} 
+                cashFlowReport={cashFlowReport}
+                equityReport={equityReport}
+              />
+            </div>
+          )}
+
+          {false && domain === "finance" && financeSubTab === "ifrs" && (
             <div className="p-6 space-y-8 text-right font-sans" id="ifrs-unified-container">
               
               {/* IFRS SUB-SELECTOR BAR (Hidden in Print) */}

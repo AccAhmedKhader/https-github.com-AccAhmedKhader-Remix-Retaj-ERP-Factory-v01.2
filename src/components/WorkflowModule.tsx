@@ -91,7 +91,7 @@ export default function WorkflowModule({
       {
         id: "WFR-003",
         transactionType: "Payroll",
-        name: "تصديق مسيرات الرواتب الشهرية والبدلات",
+        name: "تصديق كشوف المرتبات الشهرية والبدلات",
         minThreshold: 1,
         isActive: true,
         steps: [
@@ -149,7 +149,7 @@ export default function WorkflowModule({
           id: "WFT-012",
           workflowRuleId: "WFR-003",
           refCode: "PAY-2026-06",
-          title: "مسير الأجور والرواتب والبدلات التشغيلية - يونيو",
+          title: "كشف الأجور والمرتبات والبدلات التشغيلية - يونيو",
           amount: 285000,
           requestedBy: "مريم العشري (مدير الموارد البشرية)",
           createdAt: "2026-07-11",
@@ -291,7 +291,7 @@ export default function WorkflowModule({
       case "Journal": return "قيود وسندات اليومية العامة";
       case "SalesInvoice": return "فواتير المبيعات والتراخيص";
       case "PurchaseInvoice": return "أوامر وفواتير الشراء المركزي";
-      case "Payroll": return "مسيرات الرواتب والأجور الشهرية";
+      case "Payroll": return "كشوف المرتبات والأجور الشهرية";
     }
   };
 
@@ -589,7 +589,7 @@ export default function WorkflowModule({
                     <option value="Journal">قيود يومية عامة</option>
                     <option value="SalesInvoice">فواتير مبيعات وتراخيص</option>
                     <option value="PurchaseInvoice">أوامر وفواتير شراء</option>
-                    <option value="Payroll">مسير رواتب وأجور</option>
+                    <option value="Payroll">مرتبات وأجور</option>
                   </select>
                 </div>
                 <div>

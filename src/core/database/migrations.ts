@@ -65,6 +65,11 @@ export const migrationsList: Migration[] = [
     upFile: "0010_enterprise_storage_upgrade.up.sql",
     downFile: "0010_enterprise_storage_upgrade.down.sql",
   },
+  {
+    name: "0011_add_rls_with_check",
+    upFile: "0011_add_rls_with_check.up.sql",
+    downFile: "0011_add_rls_with_check.down.sql",
+  },
 ];
 
 export async function ensureMigrationsTable(client: any, embedded: boolean) {

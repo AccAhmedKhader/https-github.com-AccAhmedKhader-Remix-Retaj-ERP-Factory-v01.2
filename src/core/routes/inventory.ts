@@ -7,7 +7,7 @@ const router = Router();
 // 1. Get stock items with optional pagination
 router.get("/stock", requireScope("inventory:read"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const page = req.query.page ? parseInt(req.query.page as string) : undefined;
     const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
 
@@ -24,7 +24,7 @@ router.get("/stock", requireScope("inventory:read"), async (req: Request, res: R
 
 // 2. Update stock item with Optimistic Locking
 router.put("/stock/:sku", requireScope("inventory:write"), async (req: Request, res: Response) => {
-  const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+  const tenantId = (req as any).user!.tenantId;
   const item = req.body;
   item.sku = req.params.sku;
 
@@ -54,7 +54,7 @@ router.put("/stock/:sku", requireScope("inventory:write"), async (req: Request, 
 // 3. Get Warehouses
 router.get("/warehouses", requireScope("inventory:read"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const list = await InventoryRepository.getWarehouses(tenantId);
     res.json({ success: true, data: list });
   } catch (error: any) {
@@ -65,7 +65,7 @@ router.get("/warehouses", requireScope("inventory:read"), async (req: Request, r
 // 4. Get Sales Invoices with optional pagination
 router.get("/sales-invoices", requireScope("inventory:read"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const page = req.query.page ? parseInt(req.query.page as string) : undefined;
     const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
 
@@ -83,7 +83,7 @@ router.get("/sales-invoices", requireScope("inventory:read"), async (req: Reques
 // 5. Get Purchase Invoices with optional pagination
 router.get("/purchase-invoices", requireScope("inventory:read"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const page = req.query.page ? parseInt(req.query.page as string) : undefined;
     const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
 

@@ -9,7 +9,7 @@ const router = Router();
 // Secure GDPR Data Purge Engine
 router.post("/purge", requireScope("accounting:write"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const userId = (req as any).user?.id || "SYSTEM";
     const { targetEmail, targetId, entityType } = req.body;
 

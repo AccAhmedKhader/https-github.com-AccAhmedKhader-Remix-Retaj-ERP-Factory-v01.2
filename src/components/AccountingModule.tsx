@@ -66,6 +66,7 @@ import {
   StockItem,
   Cheque
 } from "../types";
+import IFRS18Dashboard from "./IFRS18Dashboard";
 
 interface AccountingModuleProps {
   accounts: ChartOfAccount[];
@@ -1924,6 +1925,20 @@ export default function AccountingModule({
 
       {/* SUBTAB 3: IFRS STATEMENTS */}
       {activeSubTab === "reports" && (
+        <div className="space-y-6 animate-fadeIn text-right font-sans" id="ifrs-unified-container">
+          <IFRS18Dashboard 
+            accounts={accounts} 
+            stock={stock} 
+            customers={customers} 
+            suppliers={suppliers} 
+            config={config} 
+            cashFlowReport={cashFlowReport}
+            equityReport={equityReport}
+          />
+        </div>
+      )}
+
+      {false && activeSubTab === "reports" && (
         <div className="space-y-6 animate-fadeIn text-right font-sans" id="ifrs-unified-container">
           
           {/* IFRS SUB-SELECTOR BAR (Hidden in Print) */}

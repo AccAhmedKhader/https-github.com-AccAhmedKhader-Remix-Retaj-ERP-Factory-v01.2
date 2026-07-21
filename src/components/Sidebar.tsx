@@ -141,7 +141,7 @@ export default function Sidebar({
     { id: "onboarding", label: "تهيئة المنشأة الجديدة وتأسيس النشاط", icon: Building2 },
     { id: "accounting", label: "المحاسبة العامة وضريبة القيمة المضافة", icon: Calculator },
     { id: "inventory", label: "المخازن والمستودعات المتعددة", icon: Package },
-    { id: "hr", label: "الموارد البشرية ومسير الرواتب", icon: Users },
+    { id: "hr", label: "الموارد البشرية والمرتبات", icon: Users },
     { id: "manufacturing", label: "تخطيط التصنيع والإنتاج (MRP)", icon: Wrench },
     { id: "pos", label: "نقطة البيع ومبيعات التراخيص (POS)", icon: ShoppingCart },
     { id: "sales-procurement", label: "دورة المبيعات والمشتريات المتكاملة", icon: ArrowRightLeft },

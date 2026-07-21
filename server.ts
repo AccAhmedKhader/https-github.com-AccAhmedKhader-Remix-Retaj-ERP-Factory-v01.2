@@ -25,10 +25,10 @@ import { EnterpriseDBEngine, ERPDatabaseState, FixedAsset, BankStatementItem, Cu
 import { StorageService, metrics as storageMetrics } from "./src/core/storage/StorageService";
 import { JournalEntry, JournalLine, ChartOfAccount } from "./src/types";
 import { AuthService } from "./src/core/security/auth-service";
-import { authenticateToken, requireScope, logSecurityAudit, AuthenticatedRequest } from "./src/core/security/auth-middleware";
+import { authenticateToken, requireTenantContext, requireScope, logSecurityAudit, AuthenticatedRequest } from "./src/core/security/auth-middleware";
 import { querySecureAI } from "./src/core/security/ai-service";
 
-import { validateEnv } from "./src/core/config/env-validation";
+import { validateEnv, getCorsAllowedOrigins } from "./src/core/config/env-validation";
 
 // Validate required high-entropy secrets at startup
 validateEnv();
@@ -43,7 +43,7 @@ if (process.env.NODE_ENV === "production") {
   }
 }
 
-const app = express();
+export const app = express();
 const PORT = 3000;
 
 // Enable trusting reverse proxy headers (Cloud Run, load balancers, Nginx)
@@ -56,11 +56,75 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
 }));
 
-// Apply Cross-Origin Resource Sharing (CORS) mapped to environment variables
-app.use(cors({
-  origin: process.env.CORS_ALLOWED_ORIGINS || "*",
-  credentials: true,
-}));
+// Apply Cross-Origin Resource Sharing (CORS) with strict production whitelisting and CSRF protection
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const isProduction = process.env.NODE_ENV === "production";
+  const allowedOrigins = getCorsAllowedOrigins();
+  const origin = req.headers.origin;
+
+  if (isProduction) {
+    if (origin) {
+      if (!allowedOrigins.includes(origin)) {
+        return res.status(403).json({
+          success: false,
+          error: {
+            code: "CORS_BLOCKED",
+            message: "Cross-Origin request blocked. Origin not allowed."
+          }
+        });
+      }
+      res.setHeader("Access-Control-Allow-Origin", origin);
+      res.setHeader("Access-Control-Allow-Credentials", "true");
+    } else {
+      // Direct requests (e.g. no origin header) must pass Referer/Host checks to prevent CSRF
+      const referer = req.headers.referer;
+      if (referer) {
+        try {
+          const refUrl = new URL(referer);
+          const refOrigin = `${refUrl.protocol}//${refUrl.host}`;
+          if (!allowedOrigins.includes(refOrigin)) {
+            return res.status(403).json({
+              success: false,
+              error: {
+                code: "CSRF_BLOCKED",
+                message: "Referer check failed. Request blocked."
+              }
+            });
+          }
+        } catch (err) {
+          return res.status(400).json({
+            success: false,
+            error: {
+              code: "CSRF_MALFORMED_REFERER",
+              message: "Malformed Referer header."
+            }
+          });
+        }
+      }
+    }
+  } else {
+    // Non-production modes (Development & Testing)
+    if (origin) {
+      if (allowedOrigins.includes(origin) || allowedOrigins.includes("*")) {
+        res.setHeader("Access-Control-Allow-Origin", origin);
+        res.setHeader("Access-Control-Allow-Credentials", "true");
+      } else {
+        res.setHeader("Access-Control-Allow-Origin", "*");
+      }
+    } else {
+      res.setHeader("Access-Control-Allow-Origin", "*");
+    }
+  }
+
+  // Handle preflight requests
+  if (req.method === "OPTIONS") {
+    res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS,PATCH");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization,X-Tenant-Id,X-User-Id");
+    return res.sendStatus(200);
+  }
+
+  next();
+});
 
 // Apply robust rate-limiting for threat defense and security isolation
 const apiLimiter = rateLimit({
@@ -145,6 +209,7 @@ app.get("/metrics", (req: Request, res: Response) => {
 
 // Apply strict token parsing and access verification on all /api/ endpoints
 app.use(authenticateToken);
+app.use(requireTenantContext);
 
 app.use("/api/v1/accounting", accountingRouter);
 app.use("/api/v1/inventory", inventoryRouter);
@@ -399,7 +464,7 @@ app.get("/api/v1/docs", (req, res) => {
 
 // --- API 1: Fetch/Load full State ---
 app.get("/api/erp/state", requireScope("accounting:read"), async (req: Request, res: Response) => {
-  const tenantId = (req as any).user?.tenantId || (req.query.tenantId as string) || (req.headers["x-tenant-id"] as string) || "TEN-APEX-01";
+  const tenantId = (req as any).user!.tenantId;
   const db = await EnterpriseDBEngine.initForTenantAsync(tenantId);
   res.json(db);
 });
@@ -407,7 +472,7 @@ app.get("/api/erp/state", requireScope("accounting:read"), async (req: Request, 
 // Backward compatibility state saving - tenant isolated with real-time change-detection audit logging
 app.post("/api/erp/state", requireScope("accounting:write"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || (req.query.tenantId as string) || (req.headers["x-tenant-id"] as string) || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const user = (req as AuthenticatedRequest).user;
     const userId = user?.userId || "SYSTEM";
 
@@ -506,7 +571,7 @@ app.post("/api/erp/state", requireScope("accounting:write"), async (req: Request
 // --- API 1.5: Fetch Audit Logs ---
 app.get("/api/v1/security/audit-logs", requireScope("accounting:read"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || (req.query.tenantId as string) || (req.headers["x-tenant-id"] as string) || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const db = await getDbForTenant(tenantId);
     const logs = await db.select().from(auditLogs).where(eq(auditLogs.tenantId, tenantId));
     
@@ -529,7 +594,7 @@ app.get("/api/v1/security/audit-logs", requireScope("accounting:read"), async (r
 // --- API 1.6: Write Audit Log ---
 app.post("/api/v1/security/audit-logs", requireScope("accounting:write"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || (req.query.tenantId as string) || (req.headers["x-tenant-id"] as string) || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const user = (req as AuthenticatedRequest).user;
     const userId = user?.userId || "SYSTEM";
     
@@ -560,7 +625,7 @@ app.post("/api/v1/security/audit-logs", requireScope("accounting:write"), async 
 });
 
 app.get("/api/v1/accounting/state", requireScope("accounting:read"), async (req: Request, res: Response) => {
-  const tenantId = (req as any).user?.tenantId || (req.query.tenantId as string) || (req.headers["x-tenant-id"] as string) || "TEN-APEX-01";
+  const tenantId = (req as any).user!.tenantId;
   const db = await EnterpriseDBEngine.initForTenantAsync(tenantId);
   res.json({ success: true, version: "v1", data: db });
 });
@@ -595,7 +660,7 @@ app.post("/api/v1/accounting/post", requireScope("accounting:post"), (req: Reque
       });
     }
 
-    const tenantId = (req as any).user?.tenantId || (req.query.tenantId as string) || (req.headers["x-tenant-id"] as string) || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     // Execute atomic ledger write within transaction safe lock
     const postedResult = EnterpriseDBEngine.executeTransaction((db) => {
       // Validate schema relational constraints (Foreign Key Checkers)
@@ -662,7 +727,7 @@ app.post("/api/v1/accounting/post", requireScope("accounting:post"), (req: Reque
 // --- API 3: Run Periodic Closing (إقفال الفترات المالية وتصفير المؤقتة) ---
 app.post("/api/v1/accounting/close-period", requireScope("accounting:post"), (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || (req.query.tenantId as string) || (req.headers["x-tenant-id"] as string) || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const result = EnterpriseDBEngine.executeTransaction((db) => {
       // 0. Verify there are no Draft journal entries
       const draftEntries = db.journalEntries.filter(e => e.status === "Draft" || e.status?.toLowerCase() === "draft");
@@ -775,14 +840,14 @@ app.post("/api/v1/accounting/close-period", requireScope("accounting:post"), (re
 
 // --- API 4: Fixed Assets & Depreciation Engine (الأصول الثابتة والإهلاك الدوري) ---
 app.get("/api/v1/accounting/fixed-assets", requireScope("accounting:read"), (req: Request, res: Response) => {
-  const tenantId = (req as any).user?.tenantId || (req.query.tenantId as string) || (req.headers["x-tenant-id"] as string) || "TEN-APEX-01";
+  const tenantId = (req as any).user!.tenantId;
   const db = EnterpriseDBEngine.initForTenant(tenantId);
   res.json({ success: true, data: db.fixedAssets });
 });
 
 app.post("/api/v1/accounting/fixed-assets/depreciate", requireScope("accounting:write"), (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || (req.query.tenantId as string) || (req.headers["x-tenant-id"] as string) || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const result = EnterpriseDBEngine.executeTransaction((db) => {
       const depreciationLogs: string[] = [];
       let totalDepreciationPosted = 0;
@@ -890,7 +955,7 @@ app.post("/api/v1/accounting/fixed-assets/depreciate", requireScope("accounting:
 
 // --- API 5: Bank Reconciliation (التسويات البنكية ومطابقة الدفاتر) ---
 app.get("/api/v1/accounting/bank-recon", requireScope("accounting:read"), (req: Request, res: Response) => {
-  const tenantId = (req as any).user?.tenantId || (req.query.tenantId as string) || (req.headers["x-tenant-id"] as string) || "TEN-APEX-01";
+  const tenantId = (req as any).user!.tenantId;
   const db = EnterpriseDBEngine.initForTenant(tenantId);
   res.json({ success: true, data: db.bankStatementItems });
 });
@@ -898,7 +963,7 @@ app.get("/api/v1/accounting/bank-recon", requireScope("accounting:read"), (req: 
 app.post("/api/v1/accounting/bank-recon/reconcile", requireScope("accounting:write"), (req: Request, res: Response) => {
   try {
     const { itemId } = req.body;
-    const tenantId = (req as any).user?.tenantId || (req.query.tenantId as string) || (req.headers["x-tenant-id"] as string) || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     
     const result = EnterpriseDBEngine.executeTransaction((db) => {
       const item = db.bankStatementItems.find(i => i.id === itemId);
@@ -953,14 +1018,14 @@ app.post("/api/v1/accounting/bank-recon/reconcile", requireScope("accounting:wri
 
 // --- API 6: Multi-Currency Translation (إدارة تحويل العملات الأجنبية) ---
 app.get("/api/v1/accounting/currency-exchange", requireScope("accounting:read"), (req: Request, res: Response) => {
-  const tenantId = (req as any).user?.tenantId || (req.query.tenantId as string) || (req.headers["x-tenant-id"] as string) || "TEN-APEX-01";
+  const tenantId = (req as any).user!.tenantId;
   const db = EnterpriseDBEngine.initForTenant(tenantId);
   res.json({ success: true, data: db.currencyRates });
 });
 
 app.post("/api/v1/accounting/currency-exchange/translate", requireScope("accounting:write"), (req: Request, res: Response) => {
   const { amount, fromCurrency, toCurrency } = req.body;
-  const tenantId = (req as any).user?.tenantId || (req.query.tenantId as string) || (req.headers["x-tenant-id"] as string) || "TEN-APEX-01";
+  const tenantId = (req as any).user!.tenantId;
   const db = EnterpriseDBEngine.initForTenant(tenantId);
 
   const rateFrom = db.currencyRates.find(r => r.code === fromCurrency);
@@ -992,7 +1057,7 @@ app.post("/api/v1/accounting/currency-exchange/translate", requireScope("account
 
 // --- API 7: Financial Statements Generator ( trial-balance, income-statement, balance-sheet ) ---
 app.get("/api/v1/accounting/reports/trial-balance", requireScope("accounting:read"), (req: Request, res: Response) => {
-  const tenantId = (req as any).user?.tenantId || (req.query.tenantId as string) || (req.headers["x-tenant-id"] as string) || "TEN-APEX-01";
+  const tenantId = (req as any).user!.tenantId;
   const db = EnterpriseDBEngine.initForTenant(tenantId);
   
   const balanceLines = db.accounts.map(acc => {
@@ -1020,7 +1085,7 @@ app.get("/api/v1/accounting/reports/trial-balance", requireScope("accounting:rea
 });
 
 app.get("/api/v1/accounting/reports/income-statement", requireScope("accounting:read"), (req: Request, res: Response) => {
-  const tenantId = (req as any).user?.tenantId || (req.query.tenantId as string) || (req.headers["x-tenant-id"] as string) || "TEN-APEX-01";
+  const tenantId = (req as any).user!.tenantId;
   const db = EnterpriseDBEngine.initForTenant(tenantId);
   const revenues = db.accounts.filter(a => a.type === "Revenue");
   const expenses = db.accounts.filter(a => a.type === "Expense");
@@ -1041,7 +1106,7 @@ app.get("/api/v1/accounting/reports/income-statement", requireScope("accounting:
 });
 
 app.get("/api/v1/accounting/reports/balance-sheet", requireScope("accounting:read"), (req: Request, res: Response) => {
-  const tenantId = (req as any).user?.tenantId || (req.query.tenantId as string) || (req.headers["x-tenant-id"] as string) || "TEN-APEX-01";
+  const tenantId = (req as any).user!.tenantId;
   const db = EnterpriseDBEngine.initForTenant(tenantId);
   const assets = db.accounts.filter(a => a.type === "Asset");
   const liabilities = db.accounts.filter(a => a.type === "Liability");
@@ -1065,7 +1130,7 @@ app.get("/api/v1/accounting/reports/balance-sheet", requireScope("accounting:rea
 
 // --- Backward compatibility API: Append Journal Entry ---
 app.post("/api/erp/journal", requireScope("accounting:post"), async (req: Request, res: Response) => {
-  const tenantId = (req as any).user?.tenantId || (req.query.tenantId as string) || (req.headers["x-tenant-id"] as string) || "TEN-APEX-01";
+  const tenantId = (req as any).user!.tenantId;
   const user = (req as AuthenticatedRequest).user;
   const userId = user?.userId || "SYSTEM";
   const db = EnterpriseDBEngine.initForTenant(tenantId);
@@ -1110,7 +1175,7 @@ app.post("/api/erp/journal", requireScope("accounting:post"), async (req: Reques
 
 // --- Backward compatibility API: Execute Manufacturing Order Consumption (MRP Engine) ---
 app.post("/api/erp/production-order", requireScope("accounting:write"), async (req: Request, res: Response) => {
-  const tenantId = (req as any).user?.tenantId || (req.query.tenantId as string) || (req.headers["x-tenant-id"] as string) || "TEN-APEX-01";
+  const tenantId = (req as any).user!.tenantId;
   const user = (req as AuthenticatedRequest).user;
   const userId = user?.userId || "SYSTEM";
   const db = EnterpriseDBEngine.initForTenant(tenantId);
@@ -1212,7 +1277,7 @@ app.post("/api/erp/production-order", requireScope("accounting:write"), async (r
 
 // --- API 8: Integration Tests Suite (API integrity diagnostics) ---
 app.get("/api/erp/test-connection", requireScope("accounting:read"), (req: Request, res: Response) => {
-  const tenantId = (req as any).user?.tenantId || (req.query.tenantId as string) || (req.headers["x-tenant-id"] as string) || "TEN-APEX-01";
+  const tenantId = (req as any).user!.tenantId;
   const db = EnterpriseDBEngine.initForTenant(tenantId);
   const testResults: any[] = [];
 
@@ -1262,7 +1327,7 @@ app.get("/api/erp/test-connection", requireScope("accounting:read"), (req: Reque
 
 // --- API 8a: Get All Cheques ---
 app.get("/api/v1/accounting/cheques", requireScope("accounting:read"), (req: Request, res: Response) => {
-  const tenantId = (req as any).user?.tenantId || (req.query.tenantId as string) || (req.headers["x-tenant-id"] as string) || "TEN-APEX-01";
+  const tenantId = (req as any).user!.tenantId;
   const db = EnterpriseDBEngine.initForTenant(tenantId);
   res.json({ success: true, data: db.cheques || [] });
 });
@@ -1276,7 +1341,7 @@ app.post("/api/v1/accounting/cheques/receive", requireScope("accounting:write"),
       return res.status(400).json({ success: false, message: "بيانات الشيك غير مكتملة." });
     }
 
-    const tenantId = (req as any).user?.tenantId || (req.query.tenantId as string) || (req.headers["x-tenant-id"] as string) || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const result = EnterpriseDBEngine.executeTransaction((db) => {
       const customer = db.customers.find(c => c.id === customerId);
       if (!customer) throw new Error("العميل المحدد غير موجود بقاعدة البيانات.");
@@ -1355,7 +1420,7 @@ app.post("/api/v1/accounting/cheques/endorse", requireScope("accounting:write"),
       return res.status(400).json({ success: false, message: "معرف الشيك أو معرف المورد مفقود." });
     }
 
-    const tenantId = (req as any).user?.tenantId || (req.query.tenantId as string) || (req.headers["x-tenant-id"] as string) || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const result = EnterpriseDBEngine.executeTransaction((db) => {
       const cheque = db.cheques?.find(c => c.id === chequeId);
       if (!cheque) throw new Error("الشيك المحدد غير موجود.");
@@ -1416,7 +1481,7 @@ app.post("/api/v1/accounting/cheques/endorse", requireScope("accounting:write"),
 app.post("/api/v1/accounting/cheques/collect", requireScope("accounting:write"), (req: Request, res: Response) => {
   try {
     const { chequeId } = req.body;
-    const tenantId = (req as any).user?.tenantId || (req.query.tenantId as string) || (req.headers["x-tenant-id"] as string) || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
 
     const result = EnterpriseDBEngine.executeTransaction((db) => {
       const cheque = db.cheques?.find(c => c.id === chequeId);
@@ -1472,7 +1537,7 @@ app.post("/api/v1/accounting/cheques/collect", requireScope("accounting:write"),
 app.post("/api/v1/accounting/cheques/bounce", requireScope("accounting:write"), (req: Request, res: Response) => {
   try {
     const { chequeId } = req.body;
-    const tenantId = (req as any).user?.tenantId || (req.query.tenantId as string) || (req.headers["x-tenant-id"] as string) || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
 
     const result = EnterpriseDBEngine.executeTransaction((db) => {
       const cheque = db.cheques?.find(c => c.id === chequeId);
@@ -1492,7 +1557,7 @@ app.post("/api/v1/accounting/cheques/bounce", requireScope("accounting:write"), 
 app.post("/api/v1/accounting/cheques/return", requireScope("accounting:write"), (req: Request, res: Response) => {
   try {
     const { chequeId } = req.body;
-    const tenantId = (req as any).user?.tenantId || (req.query.tenantId as string) || (req.headers["x-tenant-id"] as string) || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
 
     const result = EnterpriseDBEngine.executeTransaction((db) => {
       const cheque = db.cheques?.find(c => c.id === chequeId);
@@ -1586,7 +1651,7 @@ function redactSensitiveDataForAI(context: any): any {
 app.post("/api/gemini/query", requireScope("accounting:read"), async (req: Request, res: Response) => {
   try {
     const { prompt } = req.body;
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const userId = (req as any).user?.userId || "SYSTEM";
     
     if (!process.env.GEMINI_API_KEY) {
@@ -1658,12 +1723,14 @@ async function setupServer() {
   });
 }
 
-setupServer().catch((err) => {
-  console.error("CRITICAL: Failed to start full-stack server due to a fatal error:");
-  if (err && err.stack) {
-    console.error(err.stack);
-  } else {
-    console.error(err);
-  }
-  process.exit(1);
-});
+if (process.env.NODE_ENV !== "test") {
+  setupServer().catch((err) => {
+    console.error("CRITICAL: Failed to start full-stack server due to a fatal error:");
+    if (err && err.stack) {
+      console.error(err.stack);
+    } else {
+      console.error(err);
+    }
+    process.exit(1);
+  });
+}

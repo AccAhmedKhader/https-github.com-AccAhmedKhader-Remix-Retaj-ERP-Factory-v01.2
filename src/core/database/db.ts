@@ -244,7 +244,13 @@ export async function getDb() {
       let pgliteClient: PGlite | null = null;
       let fallback = false;
       
+      if (process.env.VITEST === "true") {
+        console.log("[DB Engine] Vitest environment detected. Forcing in-memory PGlite PostgreSQL to prevent file-lock contention.");
+        fallback = true;
+      }
+      
       try {
+        if (!fallback) {
         const dbPath = path.resolve(process.cwd(), "erp.db");
         
         // Ensure parent directory exists and is writable
@@ -275,6 +281,7 @@ export async function getDb() {
         // Execute a quick test query to verify WASM engine and storage file locks are working
         await temp.query("SELECT 1");
         pgliteClient = temp;
+        }
       } catch (e: any) {
         console.warn("[DB Engine] PGlite failed to initialize using path './erp.db':", e.message || e);
         fallback = true;
@@ -297,45 +304,7 @@ export async function getDb() {
 }
 
 export function patchPgliteInstance(client: any) {
-  if (!client || client.__patched) return;
-  client.__patched = true;
-  
-  client.__queryQueue = Promise.resolve();
-  
-  const originalQuery = client.query;
-  client.query = function(this: any, ...args: any[]) {
-    const store = tenantContextStore.getStore();
-    const desiredTenantId = store?.tenantId;
-    
-    const isSettingTenant = this.__settingTenant || 
-      (typeof args[0] === "string" && args[0].includes("set_config")) ||
-      (args[0] && typeof args[0] === "object" && args[0].text && args[0].text.includes("set_config"));
-    
-    if (!desiredTenantId || isSettingTenant) {
-      return originalQuery.apply(this, args as any);
-    }
-    
-    this.__settingTenant = true;
-    const self = this;
-    
-    const nextInQueue = (self.__queryQueue || Promise.resolve()).then(async () => {
-      try {
-        if (self.__currentTenantId !== desiredTenantId) {
-          const setConfigQuery = "SELECT set_config('app.current_tenant_id', $1, false)";
-          await originalQuery.call(self, setConfigQuery, [desiredTenantId]);
-          self.__currentTenantId = desiredTenantId;
-        }
-        self.__settingTenant = false;
-        return await originalQuery.apply(self, args as any);
-      } catch (err) {
-        self.__settingTenant = false;
-        throw err;
-      }
-    });
-    
-    self.__queryQueue = nextInQueue.then(() => {}, () => {});
-    return nextInQueue;
-  };
+  // Discarded to prevent double-patching and promise queue deadlock
 }
 
 export async function getDbForTenant(tenantId: string) {

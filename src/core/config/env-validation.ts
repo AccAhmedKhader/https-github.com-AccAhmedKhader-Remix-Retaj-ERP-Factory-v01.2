@@ -108,6 +108,35 @@ export function validateEnv() {
     }
   }
 
+  // Validate APP_DB_PASSWORD if in production
+  if (process.env.NODE_ENV === "production") {
+    const dbPassword = process.env.APP_DB_PASSWORD;
+    if (!dbPassword) {
+      missing.push("APP_DB_PASSWORD");
+    } else if (
+      dbPassword.length < 16 || 
+      dbPassword.includes("__REPLACE_ME_") || 
+      dbPassword === "fallback_secure_password_for_dev_2026_entropy_checked"
+    ) {
+      invalid.push("APP_DB_PASSWORD (insufficient entropy or default placeholder used in production)");
+    }
+  }
+
+  // Validate CORS_ALLOWED_ORIGINS format
+  const allowedOriginsRaw = process.env.CORS_ALLOWED_ORIGINS || "";
+  if (allowedOriginsRaw) {
+    const origins = allowedOriginsRaw.split(",").map(o => o.trim()).filter(Boolean);
+    for (const origin of origins) {
+      if (origin !== "*") {
+        try {
+          new URL(origin);
+        } catch (e) {
+          console.warn(`[Config Warning] CORS_ALLOWED_ORIGINS contains a non-URL origin: "${origin}". This is allowed but will not match incoming request origins unless they match exactly.`);
+        }
+      }
+    }
+  }
+
   if (missing.length > 0 || invalid.length > 0) {
     console.error("=================================================================");
     console.error("❌ CRITICAL CONFIGURATION ERROR: ENVIRONMENT VALIDATION FAILED!");
@@ -126,4 +155,9 @@ export function validateEnv() {
       process.exit(1);
     }
   }
+}
+
+export function getCorsAllowedOrigins(): string[] {
+  const raw = process.env.CORS_ALLOWED_ORIGINS || "http://localhost:3000,http://127.0.0.1:3000";
+  return raw.split(",").map(o => o.trim()).filter(Boolean);
 }

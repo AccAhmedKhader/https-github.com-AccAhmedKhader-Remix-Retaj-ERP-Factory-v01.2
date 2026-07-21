@@ -762,7 +762,7 @@ export default function ImportExportModule({
         if (item.baseSalary && isNaN(Number(item.baseSalary))) errors.push("الراتب الأساسي يجب أن يكون قيمة رقمية.");
         const exists = employees.some(e => e.id === String(item.id));
         if (exists) {
-          errors.push(`تنبيه: الرقم الوظيفي للموظف (${item.id}) مسجل بالمسير، سيتم التحديث.`);
+          errors.push(`تنبيه: الرقم الوظيفي للموظف (${item.id}) مسجل بكشوف المرتبات، سيتم التحديث.`);
         }
       }
 
@@ -1152,7 +1152,7 @@ export default function ImportExportModule({
         const taxWithholding = Math.round(grossSalary * empDoc.withholdingTaxRate);
         const netSalary = grossSalary - taxWithholding;
         return {
-          title: "مسير رواتب وقسيمة صرف شهرية",
+          title: "بيان مرتبات وقسيمة صرف شهرية",
           subTitle: "Employee Monthly Payslip Voucher",
           id: empDoc.id,
           date: new Date().toISOString().slice(0, 7) + " (صرف مالي)",

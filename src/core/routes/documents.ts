@@ -88,7 +88,7 @@ export function validateMagicBytes(filePath: string, filename: string): boolean 
 // 1. Get document folders (Filtered by ACL)
 router.get("/folders", requireScope("documents:read"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const userId = (req as any).user?.userId || "USER-SYSTEM";
     const userRole = (req as any).user?.role || "Employee";
 
@@ -112,7 +112,7 @@ router.get("/folders", requireScope("documents:read"), async (req: Request, res:
 // 2. Create document folder
 router.post("/folders", requireScope("documents:write"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const userId = (req as any).user?.userId || "USER-SYSTEM";
     const userRole = (req as any).user?.role || "Employee";
 
@@ -148,7 +148,7 @@ router.post("/folders", requireScope("documents:write"), async (req: Request, re
 // 3. Get documents with filters/search (Filtered by ACL)
 router.get("/", requireScope("documents:read"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const userId = (req as any).user?.userId || "USER-SYSTEM";
     const userRole = (req as any).user?.role || "Employee";
 
@@ -178,7 +178,7 @@ router.get("/", requireScope("documents:read"), async (req: Request, res: Respon
 // 4. Upload document (Deduplicated, zero-RAM Streaming, Scanned by Antivirus, Encrypted-at-Rest)
 router.post("/upload", requireScope("documents:write"), upload.single("file"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const userId = (req as any).user?.userId || "USER-SYSTEM";
     const userRole = (req as any).user?.role || "Employee";
     const userName = (req as any).user?.name || "مستخدم النظام";
@@ -317,7 +317,7 @@ router.post("/upload", requireScope("documents:write"), upload.single("file"), a
 // 5. Background Asynchronous Upload Route
 router.post("/upload/background", requireScope("documents:write"), upload.single("file"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const userId = (req as any).user?.userId || "USER-SYSTEM";
     const userRole = (req as any).user?.role || "Employee";
     const userName = (req as any).user?.name || "مستخدم النظام";
@@ -555,7 +555,7 @@ router.post("/chunks/cleanup", requireScope("documents:write"), async (req: Requ
 // 8. Complete Chunked Upload
 router.post("/chunks/complete", requireScope("documents:write"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const userId = (req as any).user?.userId || "USER-SYSTEM";
     const userRole = (req as any).user?.role || "Employee";
     const userName = (req as any).user?.name || "مستخدم النظام";
@@ -643,7 +643,7 @@ router.post("/chunks/complete", requireScope("documents:write"), async (req: Req
 // 8.5 Generate temporary signed URL for download
 router.post("/:id/signed-url", requireScope("documents:read"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const userId = (req as any).user?.userId || "USER-SYSTEM";
     const userRole = (req as any).user?.role || "Employee";
     const docId = req.params.id;
@@ -734,7 +734,7 @@ router.get("/download/signed", async (req: Request, res: Response) => {
 // 9. Download document (HTTP Range, decrypt on the fly, watermarking)
 router.get("/:id/download", requireScope("documents:read"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const userId = (req as any).user?.userId || "USER-SYSTEM";
     const userRole = (req as any).user?.role || "Employee";
 
@@ -786,7 +786,7 @@ router.get("/:id/download", requireScope("documents:read"), async (req: Request,
 // 10. Get Document Thumbnail (Filtered by ACL)
 router.get("/:id/thumbnail", requireScope("documents:read"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const userId = (req as any).user?.userId || "USER-SYSTEM";
     const userRole = (req as any).user?.role || "Employee";
 
@@ -822,7 +822,7 @@ router.get("/:id/thumbnail", requireScope("documents:read"), async (req: Request
 // 11. Get Document Preview Metadata (Intelligent Summary - Filtered by ACL)
 router.get("/:id/preview-meta", requireScope("documents:read"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const userId = (req as any).user?.userId || "USER-SYSTEM";
     const userRole = (req as any).user?.role || "Employee";
 
@@ -860,7 +860,7 @@ router.get("/:id/preview-meta", requireScope("documents:read"), async (req: Requ
 // 12. Upload a new version (Scanned, ACL checked, Encrypted)
 router.post("/:id/versions", requireScope("documents:write"), upload.single("file"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const userId = (req as any).user?.userId || "USER-SYSTEM";
     const userRole = (req as any).user?.role || "Employee";
     const userName = (req as any).user?.name || "مستخدم النظام";
@@ -955,7 +955,7 @@ router.post("/:id/versions", requireScope("documents:write"), upload.single("fil
 // 13. Rollback to a specific version
 router.post("/:id/rollback", requireScope("documents:write"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const userId = (req as any).user?.userId || "USER-SYSTEM";
     const userRole = (req as any).user?.role || "Employee";
     const userName = (req as any).user?.name || "مستخدم النظام";
@@ -983,7 +983,7 @@ router.post("/:id/rollback", requireScope("documents:write"), async (req: Reques
 // 14. Sign document cryptographically
 router.post("/:id/sign", requireScope("documents:sign"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const userId = (req as any).user?.userId || "USER-SYSTEM";
     const userRole = (req as any).user?.role || "Employee";
 
@@ -1027,7 +1027,7 @@ router.post("/:id/sign", requireScope("documents:sign"), async (req: Request, re
 // 15. Legal Hold status toggle
 router.patch("/:id/legal-hold", requireScope("documents:admin"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const userId = (req as any).user?.userId || "USER-SYSTEM";
     const userRole = (req as any).user?.role || "Employee";
 
@@ -1054,7 +1054,7 @@ router.patch("/:id/legal-hold", requireScope("documents:admin"), async (req: Req
 
 // 16. Delete document
 router.delete("/:id", requireScope("documents:admin"), async (req: Request, res: Response) => {
-  const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+  const tenantId = (req as any).user!.tenantId;
   const userId = (req as any).user?.userId || "USER-SYSTEM";
   const userRole = (req as any).user?.role || "Employee";
 

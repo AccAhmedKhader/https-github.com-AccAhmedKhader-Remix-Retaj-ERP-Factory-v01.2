@@ -9,7 +9,7 @@ const router = Router();
 // Get deals
 router.get("/deals", requireScope("accounting:read"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const db = await getDbForTenant(tenantId);
     const list = await db.select().from(crmDeals).where(eq(crmDeals.tenantId, tenantId));
     
@@ -35,7 +35,7 @@ router.get("/deals", requireScope("accounting:read"), async (req: Request, res: 
 // Add deal
 router.post("/deals", requireScope("accounting:write"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const db = await getDbForTenant(tenantId);
     const deal = req.body;
 
@@ -71,7 +71,7 @@ router.post("/deals", requireScope("accounting:write"), async (req: Request, res
 // Update deal
 router.put("/deals/:id", requireScope("accounting:write"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const db = await getDbForTenant(tenantId);
     const { stage, probability, value, clientName, title, source, phone, email } = req.body;
 
@@ -107,7 +107,7 @@ router.put("/deals/:id", requireScope("accounting:write"), async (req: Request, 
 // Delete deal
 router.delete("/deals/:id", requireScope("accounting:write"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const db = await getDbForTenant(tenantId);
 
     await db.delete(crmDeals).where(eq(crmDeals.id, req.params.id));

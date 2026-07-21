@@ -10,7 +10,7 @@ const router = Router();
 // 1. Get BOMs
 router.get("/boms", requireScope("inventory:read"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const db = await getDbForTenant(tenantId);
     const bomsList = await db.select().from(bomsTable).where(eq(bomsTable.tenantId, tenantId));
     const compsList = await db.select().from(bomComponentsTable).where(eq(bomComponentsTable.tenantId, tenantId));
@@ -41,7 +41,7 @@ router.get("/boms", requireScope("inventory:read"), async (req: Request, res: Re
 // 2. Add BOM
 router.post("/boms", requireScope("inventory:write"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const db = await getDbForTenant(tenantId);
     const { id, productSku, productName, laborCost, components } = req.body;
 
@@ -97,7 +97,7 @@ router.post("/boms", requireScope("inventory:write"), async (req: Request, res: 
 // 3. Get Production Orders
 router.get("/production-orders", requireScope("inventory:read"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const db = await getDbForTenant(tenantId);
     const list = await db.select().from(productionOrdersTable).where(eq(productionOrdersTable.tenantId, tenantId));
     res.json({ success: true, data: list });

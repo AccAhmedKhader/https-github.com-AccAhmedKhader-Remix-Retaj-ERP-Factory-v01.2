@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import crypto from "crypto";
 import { AuthService, TokenPayload } from "./auth-service";
 import { ERPScope, SecurityPermissionEngine } from "./rbac";
 import { getDb, getDbForTenant, tenantContextStore } from "../database/db";
@@ -88,6 +89,35 @@ export function authenticateToken(req: Request, res: Response, next: NextFunctio
 }
 
 /**
+ * Middleware to enforce tenant context. Ensures tenantId exists for the request.
+ */
+export function requireTenantContext(req: Request, res: Response, next: NextFunction) {
+  const url = req.originalUrl;
+  
+  // Bypass for login, refresh, docs, and non-api routes (consistent with authenticateToken)
+  if (
+    url.startsWith("/api/auth/login") ||
+    url.startsWith("/api/auth/refresh") ||
+    url === "/api/v1/docs" ||
+    !url.startsWith("/api/")
+  ) {
+    return next();
+  }
+
+  const authReq = req as AuthenticatedRequest;
+  if (!authReq.user?.tenantId) {
+    return res.status(401).json({
+      success: false,
+      error: {
+        code: "TENANT_CONTEXT_MISSING",
+        message: "لا يمكن تحديد هوية المستأجر (Tenant) لهذا الطلب. يرجى إعادة تسجيل الدخول."
+      }
+    });
+  }
+  next();
+}
+
+/**
  * Role-Based Access Control (RBAC) scope checker
  */
 export function requireScope(scope: ERPScope) {
@@ -125,7 +155,8 @@ export async function logSecurityAudit(
   tableName: string,
   recordId: string,
   newValues: any,
-  oldValues?: any
+  oldValues?: any,
+  req?: any // Optional request context for robust security tracking of anonymous operations
 ): Promise<string | null> {
   try {
     const db = await getDbForTenant(tenantId);
@@ -133,15 +164,33 @@ export async function logSecurityAudit(
     const newValStr = JSON.stringify(newValues);
     const oldValStr = oldValues ? JSON.stringify(oldValues) : null;
 
+    let resolvedUserId = userId;
+    const isAnonymous = !resolvedUserId ||
+                        resolvedUserId.trim() === "" ||
+                        resolvedUserId.toLowerCase() === "any user" ||
+                        resolvedUserId.toLowerCase() === "anonymous" ||
+                        resolvedUserId.toLowerCase() === "unknown";
+
+    if (isAnonymous) {
+      if (req) {
+        const ip = req.headers["x-forwarded-for"] || req.socket?.remoteAddress || req.ip || "127.0.0.1";
+        const ua = req.headers["user-agent"] || "unknown-agent";
+        const fingerprint = crypto.createHash("sha256").update(`${ip}-${ua}`).digest("hex");
+        resolvedUserId = `ANON-FINGERPRINT-IP:${ip}-UA:${ua.substring(0, 50)}-FP:${fingerprint.substring(0, 16)}`;
+      } else {
+        resolvedUserId = "SEC-FINGERPRINT-MISSING-REQ-CONTEXT";
+      }
+    }
+
     // Generate cryptographic signature to verify audit log integrity (prevents logs tampering)
     const payloadToSign = `${action}-${tableName}-${recordId}-${newValStr}-${tenantId}`;
-    const cryptographicSignature = SecurityPermissionEngine.generateAuditSignature(payloadToSign, userId);
+    const cryptographicSignature = SecurityPermissionEngine.generateAuditSignature(payloadToSign, resolvedUserId);
 
     await db.insert(auditLogs).values({
       id: `AUDIT-${Math.random().toString(36).substring(2, 9).toUpperCase()}`,
       tenantId,
       timestamp,
-      userId,
+      userId: resolvedUserId,
       action,
       tableName,
       recordId,

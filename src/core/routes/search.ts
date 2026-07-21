@@ -7,7 +7,7 @@ const router = Router();
 // 1. Core Enterprise Search Engine (GET /search)
 router.get("/", requireScope("documents:read"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const userId = (req as any).user?.userId || "USER-SYSTEM";
     const userRole = (req as any).user?.role || "Employee";
 
@@ -82,7 +82,7 @@ router.get("/", requireScope("documents:read"), async (req: Request, res: Respon
 // 2. Search Autocomplete Suggestions (GET /search/suggestions)
 router.get("/suggestions", requireScope("documents:read"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const userId = (req as any).user?.userId || "USER-SYSTEM";
     const { prefix } = req.query;
 
@@ -100,7 +100,7 @@ router.get("/suggestions", requireScope("documents:read"), async (req: Request, 
 // 3. Get Recent Searches (GET /search/recent)
 router.get("/recent", requireScope("documents:read"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const userId = (req as any).user?.userId || "USER-SYSTEM";
 
     const recents = await SearchRepository.getRecentSearches(tenantId, userId);
@@ -113,7 +113,7 @@ router.get("/recent", requireScope("documents:read"), async (req: Request, res: 
 // 4. Get Popular/Trending Searches (GET /search/popular)
 router.get("/popular", requireScope("documents:read"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const populars = await SearchRepository.getPopularSearches(tenantId);
     res.json({ success: true, data: populars });
   } catch (error: any) {
@@ -124,7 +124,7 @@ router.get("/popular", requireScope("documents:read"), async (req: Request, res:
 // 5. Get Dynamic Facets (GET /search/facets)
 router.get("/facets", requireScope("documents:read"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const userId = (req as any).user?.userId || "USER-SYSTEM";
     const userRole = (req as any).user?.role || "Employee";
 
@@ -138,7 +138,7 @@ router.get("/facets", requireScope("documents:read"), async (req: Request, res: 
 // 6. Get Search Analytics (GET /search/analytics)
 router.get("/analytics", requireScope("documents:write"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const analytics = await SearchRepository.getAnalytics(tenantId);
     res.json({ success: true, data: analytics });
   } catch (error: any) {
@@ -149,7 +149,7 @@ router.get("/analytics", requireScope("documents:write"), async (req: Request, r
 // 7. Reindex Specific Document (POST /search/reindex)
 router.post("/reindex", requireScope("documents:write"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const userId = (req as any).user?.userId || "USER-SYSTEM";
     const { documentId, ocrText } = req.body;
 
@@ -177,7 +177,7 @@ router.post("/reindex", requireScope("documents:write"), async (req: Request, re
 // 8. Rebuild Entire Search Index (POST /search/rebuild)
 router.post("/rebuild", requireScope("documents:write"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const userId = (req as any).user?.userId || "USER-SYSTEM";
 
     const rebuildResult = await SearchRepository.rebuildIndex(tenantId);
@@ -204,7 +204,7 @@ router.post("/rebuild", requireScope("documents:write"), async (req: Request, re
 // 9. Verify Search Index Integrity (POST /search/verify)
 router.post("/verify", requireScope("documents:write"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const verifyResult = await SearchRepository.verifyIntegrity(tenantId);
     res.json({ success: true, data: verifyResult });
   } catch (error: any) {
@@ -215,7 +215,7 @@ router.post("/verify", requireScope("documents:write"), async (req: Request, res
 // 10. Save A Search Query (POST /search/saved)
 router.post("/saved", requireScope("documents:read"), async (req: Request, res: Response) => {
   try {
-    const tenantId = (req as any).user?.tenantId || "TEN-APEX-01";
+    const tenantId = (req as any).user!.tenantId;
     const userId = (req as any).user?.userId || "USER-SYSTEM";
     const { name, query, filters } = req.body;
 
