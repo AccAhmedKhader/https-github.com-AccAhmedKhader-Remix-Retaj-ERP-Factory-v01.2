@@ -34,9 +34,12 @@ describe("SecurityPermissionEngine Unit Tests", () => {
     expect(SecurityPermissionEngine.hasPermission(accountantSession, "accounting:post")).toBe(false);
   });
 
-  it("should bypass and grant all permissions to SystemAdmin", () => {
-    expect(SecurityPermissionEngine.hasPermission(adminSession, "accounting:post")).toBe(true);
-    expect(SecurityPermissionEngine.hasPermission(adminSession, "manufacturing:write")).toBe(true);
+  it("should not bypass and should deny permissions not explicitly present in session scopes for SystemAdmin", () => {
+    // Under the new strict RBAC model, having 'security:admin' or being 'SystemAdmin' role does NOT bypass scope checks.
+    // Since 'adminSession' only has ['security:admin'] explicitly in its scopes list:
+    expect(SecurityPermissionEngine.hasPermission(adminSession, "security:admin")).toBe(true);
+    expect(SecurityPermissionEngine.hasPermission(adminSession, "accounting:post")).toBe(false);
+    expect(SecurityPermissionEngine.hasPermission(adminSession, "manufacturing:write")).toBe(false);
   });
 
   it("should escape HTML input strings (Negative/Sanitizing Test)", () => {

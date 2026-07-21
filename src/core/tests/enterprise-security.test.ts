@@ -77,9 +77,9 @@ describe("Enterprise Security Platform Integration & Unit Tests", () => {
   });
 
   // ----------------------------------------------------
-  // 1. ACL Engine Tests
+  // 1. ACL Engine Tests (P1-1)
   // ----------------------------------------------------
-  describe("AclEngine Permission Evaluation & Security Clearances", () => {
+  describe("AclEngine Permission Evaluation & Security Clearances (P1-1)", () => {
     it("should correctly block read access if role clearance rank is lower than classification rank", async () => {
       // LeadArchitect (Rank 4) has lower clearance than TopSecret (Rank 5) -> Blocked
       const leadArchitectAllowed = await AclEngine.checkClassificationClearance("LeadArchitect", "TopSecret");
@@ -132,9 +132,9 @@ describe("Enterprise Security Platform Integration & Unit Tests", () => {
   });
 
   // ----------------------------------------------------
-  // 2. Cryptography Engine Tests
+  // 2. Cryptography Engine Tests (P1-2)
   // ----------------------------------------------------
-  describe("CryptographyService Envelope Encryption", () => {
+  describe("CryptographyService Envelope Encryption (P1-2)", () => {
     it("should generate a secure DEK and perform successful encryption/decryption", async () => {
       const tenantId = "TEN-APEX-01";
       const docId = "DOC-TEST-123";
@@ -187,9 +187,9 @@ describe("Enterprise Security Platform Integration & Unit Tests", () => {
   });
 
   // ----------------------------------------------------
-  // 3. Antivirus Scanner Tests
+  // 3. Antivirus Scanner Tests (P1-3)
   // ----------------------------------------------------
-  describe("AntivirusService Scans & Threat Detection", () => {
+  describe("AntivirusService Scans & Threat Detection (P1-3)", () => {
     it("should flag files containing standard EICAR test string as malware/infected", async () => {
       const eicarString = "X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*";
       const tempPath = path.join(os.tmpdir(), "eicar_test.txt");
@@ -236,9 +236,9 @@ describe("Enterprise Security Platform Integration & Unit Tests", () => {
   });
 
   // ----------------------------------------------------
-  // 4. TOTP Service Tests
+  // 4. TOTP Service Tests (P1-4)
   // ----------------------------------------------------
-  describe("TotpService RFC 6238 Multi-Factor Authentication", () => {
+  describe("TotpService RFC 6238 Multi-Factor Authentication (P1-4)", () => {
     it("should generate a valid secret and verify the correct TOTP token", () => {
       const secret = TotpService.generateSecret();
       expect(secret).toBeDefined();

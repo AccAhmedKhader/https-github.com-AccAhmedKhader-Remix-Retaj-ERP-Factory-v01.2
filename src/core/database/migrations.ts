@@ -111,7 +111,11 @@ export async function runMigrationsUp(client: any, embedded: boolean) {
     if (!runMigrationsSet.has(m.name)) {
       console.log(`[Migrations] Applying migration: ${m.name}`);
       const upPath = path.join(MIGRATIONS_DIR, m.upFile);
-      const sqlContent = fs.readFileSync(upPath, "utf-8");
+      let sqlContent = fs.readFileSync(upPath, "utf-8");
+      
+      // Dynamically inject the operational database password from process.env if present
+      const dbPassword = process.env.APP_DB_PASSWORD || "fallback_secure_password_for_dev_2026_entropy_checked";
+      sqlContent = sqlContent.replace(/\$APP_DB_PASSWORD\$/g, dbPassword);
       
       await executeSql(sqlContent);
       

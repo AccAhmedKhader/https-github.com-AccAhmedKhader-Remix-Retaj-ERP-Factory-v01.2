@@ -41,7 +41,8 @@ export type ERPScope =
   | "documents:write"
   | "documents:sign"
   | "documents:admin"
-  | "PLATFORM_ADMIN_IMPERSONATE_TENANT";
+  | "PLATFORM_ADMIN_IMPERSONATE_TENANT"
+  | "platform:full_access";
 
 export interface UserSession {
   userId: string;
@@ -88,9 +89,14 @@ export const ROLE_PERMISSIONS: Record<UserRole, ERPScope[]> = {
   SystemAdmin: [
     "security:admin",
     "accounting:read",
+    "accounting:write",
+    "accounting:post",
     "inventory:read",
+    "inventory:write",
     "hr:read",
+    "hr:write",
     "manufacturing:read",
+    "manufacturing:write",
     "documents:read",
     "documents:write",
     "documents:sign",
@@ -117,7 +123,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, ERPScope[]> = {
     "documents:write",
     "documents:sign",
     "documents:admin",
-    "PLATFORM_ADMIN_IMPERSONATE_TENANT"
+    "PLATFORM_ADMIN_IMPERSONATE_TENANT",
+    "platform:full_access"
   ],
   TenantAdmin: [
     "security:admin",
@@ -187,10 +194,6 @@ export class SecurityPermissionEngine {
    * Broken Function Level Authorization (BFLA) mitigation framework.
    */
   public static hasPermission(session: UserSession, requiredScope: ERPScope): boolean {
-    // Admin bypass
-    if (session.role === "SystemAdmin" || session.scopes.includes("security:admin")) {
-      return true;
-    }
     return session.scopes.includes(requiredScope);
   }
 

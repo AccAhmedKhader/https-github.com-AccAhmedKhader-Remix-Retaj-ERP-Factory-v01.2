@@ -26,7 +26,7 @@ ALTER TABLE audit_logs FORCE ROW LEVEL SECURITY;
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'erp_app_role') THEN
-    CREATE ROLE erp_app_role LOGIN PASSWORD 'ErpAppSecurePass2026!';
+    CREATE ROLE erp_app_role LOGIN PASSWORD '$APP_DB_PASSWORD$';
   END IF;
 END
 $$;

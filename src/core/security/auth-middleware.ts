@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { AuthService, TokenPayload } from "./auth-service";
 import { ERPScope, SecurityPermissionEngine } from "./rbac";
-import { getDb } from "../database/db";
+import { getDb, getDbForTenant, tenantContextStore } from "../database/db";
 import { auditLogs } from "../database/schema";
 
 export interface AuthenticatedRequest extends Request {
@@ -80,7 +80,11 @@ export function authenticateToken(req: Request, res: Response, next: NextFunctio
 
   // Attach verified user payload directly to request
   (req as AuthenticatedRequest).user = payload;
-  next();
+  
+  // Wrap downstream execution in the verified tenant context
+  tenantContextStore.run({ tenantId: payload.tenantId }, () => {
+    next();
+  });
 }
 
 /**
@@ -124,7 +128,7 @@ export async function logSecurityAudit(
   oldValues?: any
 ): Promise<string | null> {
   try {
-    const db = await getDb();
+    const db = await getDbForTenant(tenantId);
     const timestamp = new Date().toISOString();
     const newValStr = JSON.stringify(newValues);
     const oldValStr = oldValues ? JSON.stringify(oldValues) : null;
