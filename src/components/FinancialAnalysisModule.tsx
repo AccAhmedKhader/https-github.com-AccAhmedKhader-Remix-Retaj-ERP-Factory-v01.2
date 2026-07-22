@@ -175,7 +175,16 @@ export const FinancialAnalysisModule: React.FC<FinancialAnalysisModuleProps> = (
           <FinancialStatementsTab asOfDate={asOfDate} theme={config.theme || "blue"} themeClasses={themeClasses} />
         )}
         {activeTab === "ratios" && (
-          <FinancialRatiosTab asOfDate={asOfDate} theme={config.theme || "blue"} themeClasses={themeClasses} />
+          <FinancialRatiosTab 
+            asOfDate={asOfDate} 
+            theme={config.theme || "blue"} 
+            themeClasses={themeClasses}
+            onDrillDown={(module) => {
+              if (module === "statements") setActiveTab("statements");
+              else if (module === "aging") setActiveTab("aging");
+              else if (module === "cost_centers") setActiveTab("cost_centers");
+            }} 
+          />
         )}
         {activeTab === "trend" && (
           <TrendHorizontalTab asOfDate={asOfDate} theme={config.theme || "blue"} themeClasses={themeClasses} />

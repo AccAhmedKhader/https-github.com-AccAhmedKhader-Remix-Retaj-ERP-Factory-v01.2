@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import { FinancialAnalysisRepository } from "../database/repositories/FinancialAnalysisRepository";
 import { requireScope } from "../security/auth-middleware";
+import { querySecureAI } from "../security/ai-service";
 import Decimal from "decimal.js";
 
 const router = Router();
@@ -255,6 +256,52 @@ router.post("/what-if", requireScope("accounting:read"), async (req: Request, re
         }
       }
     });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 14. Interactive AI Chat Assistant Endpoint for Ratios
+router.post("/ai-chat", requireScope("accounting:read"), async (req: Request, res: Response) => {
+  try {
+    const { query, ratioContext } = req.body;
+    const tenantId = (req as any).user!.tenantId || "tenant-default";
+    const userId = (req as any).user!.id || "user-default";
+
+    if (!query) {
+      return res.status(400).json({ success: false, error: "النص المطلوب للاستفسار المالي غير موجود" });
+    }
+
+    let replyText = "";
+    if (process.env.GEMINI_API_KEY) {
+      try {
+        const prompt = `أنت الخبير المالي والمستشار التنفيذي الذكي لنظام ApexSaaS ERP.
+المستعلم يسأل عن المؤشر المالي التالي:
+- اسم النسبة: ${ratioContext?.titleAr || "نسبة مالية"}
+- القيمة الحالية: ${ratioContext?.value || ""}
+- الوضع الحالي: ${ratioContext?.status || ""}
+- المعايير المستهدفة: ${JSON.stringify(ratioContext?.benchmarks || {})}
+- تاريخ السجلات: ${ratioContext?.asOfDate || ""}
+
+السؤال المطلوب من المستخدم:
+"${query}"
+
+قدم إجابة مالية احترافية، دقيقة، ومبسطة باللغة العربية مع خطوات تنفيذية عملية مستندة لقواعد المحاسبة الدولية IFRS والواقع التشغيلي للشركات.`;
+
+        const aiRes = await querySecureAI(prompt, tenantId, userId);
+        replyText = aiRes.text;
+      } catch (aiErr) {
+        replyText = `بناءً على البيانات المسجلة بالـ ERP لمؤشر (${ratioContext?.titleAr || "النسبة المالية"}) البالغة (${ratioContext?.value}):\n\n` +
+          `• التشخيص المالي: الوضع الحالي يقع ضمن النطاق (${ratioContext?.status || "الطبيعي"}).\n` +
+          `• النصيحة التنفيذية: يُوصى بمتابعة كفاءة تحصيل الديون وحركة المخزون بانتظام لضمان استقرار التدفقات النقدية.`;
+      }
+    } else {
+      replyText = `بناءً على البيانات المسجلة بالـ ERP لمؤشر (${ratioContext?.titleAr || "النسبة المالية"}) البالغة (${ratioContext?.value}):\n\n` +
+        `• التشخيص المالي: الوضع الحالي يقع ضمن النطاق (${ratioContext?.status || "الطبيعي"}).\n` +
+        `• النصيحة التنفيذية: يُوصى بمتابعة كفاءة تحصيل الديون وحركة المخزون بانتظام لضمان استقرار التدفقات النقدية.`;
+    }
+
+    res.json({ success: true, reply: replyText });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message });
   }

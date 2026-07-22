@@ -10,21 +10,29 @@ import {
   DollarSign, 
   Zap,
   ShieldCheck,
-  Search
+  Search,
+  Sparkles,
+  ArrowUpRight,
+  Info
 } from "lucide-react";
+
+import { FinancialHealthScoreCard } from "./FinancialHealthScoreCard";
+import { AIFinancialIntelligencePanel } from "./AIFinancialIntelligencePanel";
 
 interface RatiosTabProps {
   asOfDate: string;
   theme: string;
   themeClasses: any;
+  onDrillDown?: (module: string, code?: string) => void;
 }
 
-export const FinancialRatiosTab: React.FC<RatiosTabProps> = ({ asOfDate, theme, themeClasses }) => {
+export const FinancialRatiosTab: React.FC<RatiosTabProps> = ({ asOfDate, theme, themeClasses, onDrillDown }) => {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedRatioForIntel, setSelectedRatioForIntel] = useState<any | null>(null);
 
   useEffect(() => {
     fetchRatios();
@@ -50,10 +58,13 @@ export const FinancialRatiosTab: React.FC<RatiosTabProps> = ({ asOfDate, theme, 
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-pulse">
-        {[1, 2, 3, 4, 5, 6].map((i) => (
-          <div key={i} className="h-44 bg-slate-800/40 rounded-xl border border-slate-700/50 p-4" />
-        ))}
+      <div className="space-y-6">
+        <div className="h-32 bg-slate-800/40 rounded-2xl border border-slate-700/50 animate-pulse" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-pulse">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="h-48 bg-slate-800/40 rounded-xl border border-slate-700/50 p-4" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -95,12 +106,18 @@ export const FinancialRatiosTab: React.FC<RatiosTabProps> = ({ asOfDate, theme, 
 
   return (
     <div className="space-y-6 text-right dir-rtl">
-      {/* Category filter bar */}
+      {/* 1. Executive Overall Financial Health Score Card */}
+      <FinancialHealthScoreCard ratios={ratios} onSelectRatio={(key) => {
+        const found = ratios.find((r: any) => r.key === key);
+        if (found) setSelectedRatioForIntel(found);
+      }} />
+
+      {/* Category filter & Search bar */}
       <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 backdrop-blur-md flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl">
-        <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0">
+        <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 scrollbar-thin scrollbar-thumb-slate-800">
           <button
             onClick={() => setSelectedCategory("all")}
-            className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
               selectedCategory === "all"
                 ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
                 : "bg-slate-800/60 text-slate-400 hover:bg-slate-800 hover:text-slate-200"
@@ -112,7 +129,7 @@ export const FinancialRatiosTab: React.FC<RatiosTabProps> = ({ asOfDate, theme, 
             <button
               key={cat.key}
               onClick={() => setSelectedCategory(cat.key)}
-              className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
                 selectedCategory === cat.key
                   ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
                   : "bg-slate-800/60 text-slate-400 hover:bg-slate-800 hover:text-slate-200"
@@ -141,16 +158,31 @@ export const FinancialRatiosTab: React.FC<RatiosTabProps> = ({ asOfDate, theme, 
         {filteredRatios.map((ratio: any) => (
           <div
             key={ratio.key}
-            className="bg-slate-900/60 border border-slate-800 hover:border-slate-700/80 transition-all rounded-xl p-5 space-y-3 flex flex-col justify-between shadow-lg"
+            onClick={() => setSelectedRatioForIntel(ratio)}
+            tabIndex={0}
+            onKeyDown={(e) => e.key === "Enter" && setSelectedRatioForIntel(ratio)}
+            className="bg-slate-900/60 border border-slate-800 hover:border-blue-500/60 hover:bg-slate-900/90 transition-all rounded-xl p-5 space-y-3 flex flex-col justify-between shadow-lg group cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+            title="انقر لفتح لوحة التحليل الذكي للنسبة (20 قسماً)"
           >
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-medium text-slate-400">{ratio.categoryAr}</span>
+                <span className="text-[11px] font-medium text-slate-400 group-hover:text-blue-400 transition-colors">
+                  {ratio.categoryAr}
+                </span>
                 {getStatusBadge(ratio.status)}
               </div>
 
-              <h4 className="text-sm font-bold text-slate-100">{ratio.titleAr}</h4>
-              <p className="text-[11px] text-slate-500 font-mono">{ratio.titleEn}</p>
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <h4 className="text-sm font-bold text-slate-100 group-hover:text-blue-300 transition-colors">
+                    {ratio.titleAr}
+                  </h4>
+                  <p className="text-[11px] text-slate-500 font-mono">{ratio.titleEn}</p>
+                </div>
+                <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+              </div>
             </div>
 
             <div className="space-y-2 pt-2 border-t border-slate-800/80">
@@ -159,17 +191,44 @@ export const FinancialRatiosTab: React.FC<RatiosTabProps> = ({ asOfDate, theme, 
                   {ratio.value} <span className="text-xs font-normal text-slate-400">{ratio.unit}</span>
                 </span>
                 <span className="text-xs text-slate-400">
-                  المعيار المستهدف: <strong className="text-slate-200">{ratio.benchmark}</strong>
+                  المعيار: <strong className="text-slate-200">{ratio.benchmark}</strong>
                 </span>
               </div>
 
               <p className="text-[11px] text-slate-400 leading-relaxed bg-slate-950/50 p-2.5 rounded-lg border border-slate-800/60">
                 {ratio.description}
               </p>
+
+              {/* Action Trigger Button */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedRatioForIntel(ratio);
+                }}
+                className="w-full mt-2 py-2 px-3 bg-blue-600/10 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/30 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all group-hover:shadow-md cursor-pointer"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>عرض التحليل المالي الذكي (20 قسماً)</span>
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
         ))}
       </div>
+
+      {/* Sliding AI Financial Intelligence Panel */}
+      {selectedRatioForIntel && (
+        <AIFinancialIntelligencePanel
+          ratio={selectedRatioForIntel}
+          companyData={data}
+          asOfDate={asOfDate}
+          onClose={() => setSelectedRatioForIntel(null)}
+          onDrillDown={(module, code) => {
+            if (onDrillDown) onDrillDown(module, code);
+          }}
+        />
+      )}
     </div>
   );
 };
