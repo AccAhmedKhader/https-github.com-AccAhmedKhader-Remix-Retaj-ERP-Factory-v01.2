@@ -20,6 +20,7 @@ import documentsRouter from "./src/core/routes/documents";
 import searchRouter from "./src/core/routes/search";
 import crmRouter from "./src/core/routes/crm";
 import complianceRouter from "./src/core/routes/compliance";
+import financialAnalysisRouter from "./src/core/routes/financial-analysis";
 
 import { EnterpriseDBEngine, ERPDatabaseState, FixedAsset, BankStatementItem, CurrencyRate } from "./src/core/database/db-engine";
 import { StorageService, metrics as storageMetrics } from "./src/core/storage/StorageService";
@@ -220,6 +221,7 @@ app.use("/api/v1/documents", documentsRouter);
 app.use("/api/v1/search", searchRouter);
 app.use("/api/v1/crm", crmRouter);
 app.use("/api/v1/compliance", complianceRouter);
+app.use("/api/v1/financial-analysis", financialAnalysisRouter);
 
 // --- 2. Identity and Session Lifespans Controllers ---
 

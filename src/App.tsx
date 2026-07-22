@@ -37,6 +37,7 @@ import ImportExportModule from "./components/ImportExportModule";
 import CRMModule from "./components/CRMModule";
 import DocManagerModule from "./components/DocManagerModule";
 import WorkflowModule from "./components/WorkflowModule";
+import FinancialAnalysisModule from "./components/FinancialAnalysisModule";
 
 // Global fetch wrapper to automatically inject JWT access tokens and handle 401 logouts with auto-refresh
 const originalFetch = window.fetch.bind(window);
@@ -673,6 +674,13 @@ export default function App() {
             cheques={cheques}
             setCheques={setChequesWithOptimisticLock}
             config={config}
+          />
+        );
+      case "financial-analysis":
+        return (
+          <FinancialAnalysisModule
+            config={config}
+            themeClasses={clr}
           />
         );
       case "inventory":

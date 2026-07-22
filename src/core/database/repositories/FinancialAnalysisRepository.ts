@@ -44,7 +44,7 @@ export class FinancialAnalysisRepository {
       )
     );
     
-    const entryIds = entries.map(e => e.id);
+    const entryIds = entries.map((e: any) => e.id);
     let lines: any[] = [];
     if (entryIds.length > 0) {
       lines = await db.select().from(journalLines).where(
@@ -70,7 +70,7 @@ export class FinancialAnalysisRepository {
       trialBalanceMap.set(l.accountCode, current);
     }
     
-    const result = allAccounts.map(acc => {
+    const result = allAccounts.map((acc: any) => {
       const accum = trialBalanceMap.get(acc.code) || { debitSum: new Decimal(0), creditSum: new Decimal(0) };
       const initial = new Decimal(acc.initialBalance || 0);
       const debits = accum.debitSum;
@@ -116,7 +116,7 @@ export class FinancialAnalysisRepository {
       )
     );
     
-    const entryIds = entries.map(e => e.id);
+    const entryIds = entries.map((e: any) => e.id);
     let lines: any[] = [];
     if (entryIds.length > 0) {
       lines = await db.select().from(journalLines).where(eq(journalLines.tenantId, tenantId));
@@ -301,7 +301,7 @@ export class FinancialAnalysisRepository {
       )
     );
     
-    const entryIds = entries.map(e => e.id);
+    const entryIds = entries.map((e: any) => e.id);
     let lines: any[] = [];
     if (entryIds.length > 0) {
       lines = await db.select().from(journalLines).where(eq(journalLines.tenantId, tenantId));
@@ -482,7 +482,7 @@ export class FinancialAnalysisRepository {
 
     const mappingMap = new Map(mappings.map((m: any) => [m.accountCode, m]));
     const isCashEquivalent = (code: string) => {
-      const m = mappingMap.get(code);
+      const m: any = mappingMap.get(code);
       if (m) return m.activityType === "CashEquivalent";
       return ["10100", "10200", "10300"].includes(code);
     };
@@ -496,7 +496,7 @@ export class FinancialAnalysisRepository {
           lte(journalEntries.date, date)
         )
       );
-      const entryIds = entries.map(e => e.id);
+      const entryIds = entries.map((e: any) => e.id);
       let lines: any[] = [];
       if (entryIds.length > 0) {
         lines = await db.select().from(journalLines).where(eq(journalLines.tenantId, tenantId));
@@ -515,7 +515,7 @@ export class FinancialAnalysisRepository {
         const credit = new Decimal(l.credit || 0);
         
         // Find normal balance of account code
-        const accType = allAccounts.find(a => a.code === l.accountCode)?.type;
+        const accType = allAccounts.find((a: any) => a.code === l.accountCode)?.type;
         if (accType === "Asset" || accType === "Expense") {
           balanceMap.set(l.accountCode, currentBal.plus(debit).minus(credit));
         } else {
@@ -686,7 +686,7 @@ export class FinancialAnalysisRepository {
     const entries = await db.select().from(journalEntries).where(
       and(eq(journalEntries.tenantId, tenantId), eq(journalEntries.status, "Posted"), lte(journalEntries.date, asOfDate))
     );
-    const entryIds = entries.map(e => e.id);
+    const entryIds = entries.map((e: any) => e.id);
     let lines: any[] = [];
     if (entryIds.length > 0) {
       lines = await db.select().from(journalLines).where(eq(journalLines.tenantId, tenantId));
@@ -699,7 +699,7 @@ export class FinancialAnalysisRepository {
     }
     for (const l of lines) {
       const val = balanceMap.get(l.accountCode) || new Decimal(0);
-      const accType = allAccounts.find(a => a.code === l.accountCode)?.type;
+      const accType = allAccounts.find((a: any) => a.code === l.accountCode)?.type;
       if (accType === "Asset" || accType === "Expense") {
         balanceMap.set(l.accountCode, val.plus(new Decimal(l.debit || 0)).minus(new Decimal(l.credit || 0)));
       } else {
@@ -944,13 +944,13 @@ export class FinancialAnalysisRepository {
       },
       {
         key: "interest_coverage",
-        value: interest === 0 ? "N/A" : interestCoverage,
+        value: interest.isZero() ? "N/A" : interestCoverage,
         category: "leverage",
         titleAr: "معدل تغطية الفوائد",
         titleEn: "Interest Coverage Ratio",
         descAr: "قدرة الأرباح التشغيلية على الوفاء بمصروفات الفوائد البنكية. أقل من 1.5 يشكل قلقاً ائتمانياً.",
         descEn: "Ability to service finance costs from EBIT.",
-        evaluationAr: interest === 0 ? "لا توجد فوائد بنكية مستحقة - خالي من الديون الربوية" : interestCoverage >= 3.0 ? "قدرة تغطية ممتازة" : "قدرة تغطية حرجة"
+        evaluationAr: interest.isZero() ? "لا توجد فوائد بنكية مستحقة - خالي من الديون الربوية" : interestCoverage >= 3.0 ? "قدرة تغطية ممتازة" : "قدرة تغطية حرجة"
       }
     ];
 
@@ -1375,7 +1375,7 @@ export class FinancialAnalysisRepository {
     const customerPays = await db.select().from(customerPayments).where(eq(customerPayments.tenantId, tenantId));
     const supplierPays = await db.select().from(supplierPayments).where(eq(supplierPayments.tenantId, tenantId));
 
-    const totalInvoicesSum = invoices.reduce((sum, inv) => sum.plus(new Decimal(inv.totalAmount || 0)), new Decimal(0));
+    const totalInvoicesSum = invoices.reduce((sum: Decimal, inv: any) => sum.plus(new Decimal(inv.totalAmount || 0)), new Decimal(0));
 
     // Grouping into buckets
     let b0_30 = new Decimal(0);
@@ -1394,11 +1394,11 @@ export class FinancialAnalysisRepository {
       // Standard heuristic: sum payments matching invoiceNumber reference
       let paid = new Decimal(0);
       if (isReceivables) {
-        const matches = customerPays.filter(p => p.customerId === (inv as any).customerId && p.reference === inv.invoiceNumber);
-        paid = matches.reduce((sum, p) => sum.plus(new Decimal(p.amount || 0)), new Decimal(0));
+        const matches = customerPays.filter((p: any) => p.customerId === (inv as any).customerId && p.reference === inv.invoiceNumber);
+        paid = matches.reduce((sum: Decimal, p: any) => sum.plus(new Decimal(p.amount || 0)), new Decimal(0));
       } else {
-        const matches = supplierPays.filter(p => p.supplierId === (inv as any).supplierId && p.reference === inv.invoiceNumber);
-        paid = matches.reduce((sum, p) => sum.plus(new Decimal(p.amount || 0)), new Decimal(0));
+        const matches = supplierPays.filter((p: any) => p.supplierId === (inv as any).supplierId && p.reference === inv.invoiceNumber);
+        paid = matches.reduce((sum: Decimal, p: any) => sum.plus(new Decimal(p.amount || 0)), new Decimal(0));
       }
 
       const openAmount = invAmount.minus(paid);
@@ -1484,7 +1484,7 @@ export class FinancialAnalysisRepository {
       )
     );
 
-    const entryIds = entries.map(e => e.id);
+    const entryIds = entries.map((e: any) => e.id);
     let lines: any[] = [];
     if (entryIds.length > 0) {
       lines = await db.select().from(journalLines).where(eq(journalLines.tenantId, tenantId));
@@ -1496,7 +1496,7 @@ export class FinancialAnalysisRepository {
     const profitCenterData = new Map<string, { debit: Decimal; credit: Decimal }>();
 
     for (const l of lines) {
-      const ent = entries.find(e => e.id === l.entryId);
+      const ent = entries.find((e: any) => e.id === l.entryId);
       if (!ent) continue;
 
       if (ent.costCenter) {
@@ -1514,7 +1514,7 @@ export class FinancialAnalysisRepository {
       }
     }
 
-    const ccReport = listCostCenters.map(cc => {
+    const ccReport = listCostCenters.map((cc: any) => {
       const accum = costCenterData.get(cc.id) || { debit: new Decimal(0), credit: new Decimal(0) };
       // Cost center typically tracks expenses (Debit - Credit)
       const actualSpent = accum.debit.minus(accum.credit);
@@ -1530,7 +1530,7 @@ export class FinancialAnalysisRepository {
       };
     });
 
-    const pcReport = listProfitCenters.map(pc => {
+    const pcReport = listProfitCenters.map((pc: any) => {
       const accum = profitCenterData.get(pc.id) || { debit: new Decimal(0), credit: new Decimal(0) };
       // Profit center tracks net income (Credit - Debit for revenues, Debit - Credit for expenses)
       // For simple aggregation, let's treat credit as revenue inflow and debit as expense outflow

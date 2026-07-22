@@ -21,7 +21,8 @@ import {
   RefreshCw,
   Target,
   FolderOpen,
-  Workflow
+  Workflow,
+  TrendingUp
 } from "lucide-react";
 import { ERPConfig } from "../types";
 
@@ -140,6 +141,7 @@ export default function Sidebar({
     { id: "dashboard", label: "لوحة تحكم ذكاء الأعمال (BI)", icon: LayoutDashboard },
     { id: "onboarding", label: "تهيئة المنشأة الجديدة وتأسيس النشاط", icon: Building2 },
     { id: "accounting", label: "المحاسبة العامة وضريبة القيمة المضافة", icon: Calculator },
+    { id: "financial-analysis", label: "التحليل المالي المتقدم والتقرير التنفيذي", icon: TrendingUp },
     { id: "inventory", label: "المخازن والمستودعات المتعددة", icon: Package },
     { id: "hr", label: "الموارد البشرية والمرتبات", icon: Users },
     { id: "manufacturing", label: "تخطيط التصنيع والإنتاج (MRP)", icon: Wrench },
